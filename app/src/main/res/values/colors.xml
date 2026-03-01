@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="task_red">#E53935</color>
+    <color name="task_orange">#FB8C00</color>
+    <color name="task_yellow">#FDD835</color>
+    <color name="task_green">#43A047</color>
+    <color name="task_teal">#00897B</color>
+    <color name="task_blue">#1E88E5</color>
+    <color name="task_purple">#8E24AA</color>
+    <color name="task_gray">#757575</color>
+
+    <color name="bg_header">#F5F5F5</color>
+    <color name="bg_current_task">#EEEEEE</color>
+    <color name="text_primary">#212121</color>
+    <color name="text_secondary">#757575</color>
+    <color name="divider">#E0E0E0</color>
+</resources>
