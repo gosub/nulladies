@@ -1,0 +1,141 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="16dp">
+
+        <!-- Type selector -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Type"
+            android:textSize="13sp"
+            android:textColor="@color/text_secondary"
+            android:layout_marginBottom="4dp" />
+
+        <Spinner
+            android:id="@+id/spinner_type"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="16dp" />
+
+        <!-- Title (hidden for QUEUE_SLOT) -->
+        <TextView
+            android:id="@+id/label_title"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Task title"
+            android:textSize="13sp"
+            android:textColor="@color/text_secondary"
+            android:layout_marginBottom="4dp" />
+
+        <EditText
+            android:id="@+id/edit_title"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Enter task title"
+            android:inputType="text"
+            android:maxLines="1"
+            android:layout_marginBottom="16dp" />
+
+        <!-- Color (hidden for QUEUE_SLOT) -->
+        <TextView
+            android:id="@+id/label_color"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Color"
+            android:textSize="13sp"
+            android:textColor="@color/text_secondary"
+            android:layout_marginBottom="8dp" />
+
+        <HorizontalScrollView
+            android:id="@+id/color_scroll"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="16dp">
+
+            <LinearLayout
+                android:id="@+id/color_picker"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:padding="4dp" />
+        </HorizontalScrollView>
+
+        <!-- Days of week (shown only for DAYS_OF_WEEK) -->
+        <LinearLayout
+            android:id="@+id/days_of_week_section"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:visibility="gone">
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Days of week"
+                android:textSize="13sp"
+                android:textColor="@color/text_secondary"
+                android:layout_marginBottom="8dp" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal">
+
+                <CheckBox android:id="@+id/cb_mon" android:layout_width="0dp"
+                    android:layout_height="wrap_content" android:layout_weight="1"
+                    android:text="M" android:gravity="center" />
+                <CheckBox android:id="@+id/cb_tue" android:layout_width="0dp"
+                    android:layout_height="wrap_content" android:layout_weight="1"
+                    android:text="T" android:gravity="center" />
+                <CheckBox android:id="@+id/cb_wed" android:layout_width="0dp"
+                    android:layout_height="wrap_content" android:layout_weight="1"
+                    android:text="W" android:gravity="center" />
+                <CheckBox android:id="@+id/cb_thu" android:layout_width="0dp"
+                    android:layout_height="wrap_content" android:layout_weight="1"
+                    android:text="T" android:gravity="center" />
+                <CheckBox android:id="@+id/cb_fri" android:layout_width="0dp"
+                    android:layout_height="wrap_content" android:layout_weight="1"
+                    android:text="F" android:gravity="center" />
+                <CheckBox android:id="@+id/cb_sat" android:layout_width="0dp"
+                    android:layout_height="wrap_content" android:layout_weight="1"
+                    android:text="S" android:gravity="center" />
+                <CheckBox android:id="@+id/cb_sun" android:layout_width="0dp"
+                    android:layout_height="wrap_content" android:layout_weight="1"
+                    android:text="S" android:gravity="center" />
+            </LinearLayout>
+        </LinearLayout>
+
+        <!-- Specific dates (shown only for SPECIFIC_DATES) -->
+        <LinearLayout
+            android:id="@+id/specific_dates_section"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:visibility="gone">
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Specific dates (comma-separated, YYYY-MM-DD)"
+                android:textSize="13sp"
+                android:textColor="@color/text_secondary"
+                android:layout_marginBottom="4dp" />
+
+            <EditText
+                android:id="@+id/edit_dates"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="2026-01-15,2026-02-01"
+                android:inputType="text"
+                android:maxLines="3" />
+        </LinearLayout>
+
+    </LinearLayout>
+</ScrollView>
