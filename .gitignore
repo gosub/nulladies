@@ -4,4 +4,3 @@ app/build/
 local.properties
 debug.keystore
 *.apk
-.stignore
