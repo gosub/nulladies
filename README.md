@@ -1,4 +1,4 @@
-# NullaDies
+# NullaDies [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](LICENSE)
 
 *Nulla dies sine linea* — not a day without a line.
 
