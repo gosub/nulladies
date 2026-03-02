@@ -1,23 +1,25 @@
 package it.lo.exp.nulladies;
 
-import android.app.Activity;
+import androidx.appcompat.app.AppCompatActivity;
 import android.app.AlertDialog;
 import android.content.Intent;
 import android.graphics.drawable.GradientDrawable;
 import android.os.Bundle;
+import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.util.Log;
+import com.google.android.material.bottomnavigation.BottomNavigationView;
 
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 
-public class MainActivity extends Activity {
+public class MainActivity extends AppCompatActivity {
 
     private static final String TAG = "NullaDies";
 
@@ -73,13 +75,24 @@ public class MainActivity extends Activity {
         // FAB
         findViewById(R.id.fab_quick_add).setOnClickListener(v -> showQuickAddDialog());
 
-        // Nav buttons
-        findViewById(R.id.btn_nav_queue)
-            .setOnClickListener(v -> startActivity(new Intent(this, TodoQueueActivity.class)));
-        findViewById(R.id.btn_nav_recurring)
-            .setOnClickListener(v -> startActivity(new Intent(this, RecurringTasksActivity.class)));
-        findViewById(R.id.btn_nav_settings)
-            .setOnClickListener(v -> startActivity(new Intent(this, SettingsActivity.class)));
+        // Bottom navigation
+        BottomNavigationView nav = findViewById(R.id.bottom_nav);
+        nav.setOnItemSelectedListener(item -> {
+            int id = item.getItemId();
+            if (id == R.id.nav_queue) {
+                startActivity(new Intent(this, TodoQueueActivity.class));
+                return true;
+            }
+            if (id == R.id.nav_tasks) {
+                startActivity(new Intent(this, RecurringTasksActivity.class));
+                return true;
+            }
+            if (id == R.id.nav_settings) {
+                startActivity(new Intent(this, SettingsActivity.class));
+                return true;
+            }
+            return false;
+        });
     }
 
     @Override
@@ -88,6 +101,13 @@ public class MainActivity extends Activity {
         dayManager.checkAndRolloverIfNeeded();
         refreshData();
         refreshUI();
+        // Deselect all nav items — this is a launcher screen, not a tab host
+        BottomNavigationView nav = findViewById(R.id.bottom_nav);
+        nav.getMenu().setGroupCheckable(0, true, false);
+        for (int i = 0; i < nav.getMenu().size(); i++) {
+            nav.getMenu().getItem(i).setChecked(false);
+        }
+        nav.getMenu().setGroupCheckable(0, true, true);
     }
 
     // ─── Data ──────────────────────────────────────────────────────────────────

@@ -1,6 +1,6 @@
 package it.lo.exp.nulladies;
 
-import android.app.Activity;
+import androidx.appcompat.app.AppCompatActivity;
 import android.app.AlertDialog;
 import android.os.Bundle;
 import android.view.View;
@@ -14,7 +14,7 @@ import android.widget.TextView;
 
 import java.util.List;
 
-public class TodoQueueActivity extends Activity {
+public class TodoQueueActivity extends AppCompatActivity {
 
     private DatabaseHelper db;
     private ListView listView;

@@ -1,6 +1,6 @@
 package it.lo.exp.nulladies;
 
-import android.app.Activity;
+import androidx.appcompat.app.AppCompatActivity;
 import android.app.TimePickerDialog;
 import android.content.Intent;
 import android.net.Uri;
@@ -8,7 +8,7 @@ import android.os.Bundle;
 import android.widget.Button;
 import android.widget.TextView;
 
-public class SettingsActivity extends Activity {
+public class SettingsActivity extends AppCompatActivity {
 
     private static final int REQUEST_BACKUP_FOLDER = 1;
 
