@@ -21,7 +21,7 @@ A micro-task tracker for Android. The idea is simple: completing many small thin
 - Plain Java (no Kotlin, no Jetpack Compose)
 - Raw SQLite via `SQLiteOpenHelper` (no Room)
 - XML layouts with `LinearLayout` / `RelativeLayout` / `FrameLayout`
-- Standard `android.app.Activity` (no AndroidX)
+- `AppCompatActivity` with Material3 theme and `BottomNavigationView`
 - Gradle build system, Nix shell for the toolchain
 - minSdk 26 (Android 8.0)
 
