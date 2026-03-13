@@ -13,6 +13,7 @@ A micro-task tracker for Android. The idea is simple: completing many small thin
 - **Promote** — tap any square in the grid to bring that task back to the current position
 - **Quick-add FAB** — add a one-off task to today without touching the recurring list
 - **Configurable day rollover** — new day generation fires at a time you set, triggered on app resume
+- **Action log** — a history screen (bottom nav) showing every action newest-first: completions, skips, pushes, splits, quick-adds
 - **Org-mode export** — writes a plain-text `.org` backup to a folder you choose via the system file picker; read-only after setup, no continuous access required
 - **Fully offline** — no network permissions, no accounts, no cloud
 
@@ -29,23 +30,20 @@ No IDE required. No Android Studio. Just a terminal and a text editor.
 
 ## Build
 
-**Prerequisite:** [Nix](https://nixos.org/download/) must be installed.
+**Prerequisites:** either [Nix](https://nixos.org/download/) (provides JDK 17, Gradle, and the Android SDK automatically), or install JDK 17, Gradle, and the Android SDK yourself and set `ANDROID_HOME`.
 
 ```bash
-# Enter the dev shell (provides JDK 17, Gradle, Android SDK)
-nix-shell
-
 # Build debug APK
-make
+nix-shell --run make
 
 # Install on a connected device
-make install
+nix-shell --run "make install"
 
 # Build, install, and launch
-make run
+nix-shell --run "make run"
 
 # Stream filtered logs
-make logcat
+nix-shell --run "make logcat"
 ```
 
 The debug APK lands at `app/build/outputs/apk/debug/app-debug.apk`.
