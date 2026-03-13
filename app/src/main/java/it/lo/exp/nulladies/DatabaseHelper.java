@@ -17,7 +17,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 
     private static final String TAG = "NullaDies";
     private static final String DB_NAME = "nulladies.db";
-    private static final int DB_VERSION = 1;
+    private static final int DB_VERSION = 3;
 
     public DatabaseHelper(Context context) {
         super(context, DB_NAME, null, DB_VERSION);
@@ -38,7 +38,8 @@ public class DatabaseHelper extends SQLiteOpenHelper {
             "id INTEGER PRIMARY KEY AUTOINCREMENT," +
             "position INTEGER NOT NULL," +
             "title TEXT NOT NULL," +
-            "color TEXT NOT NULL" +
+            "color TEXT NOT NULL," +
+            "state TEXT NOT NULL DEFAULT 'pending'" +
         ")");
 
         db.execSQL("CREATE TABLE daily_tasks (" +
@@ -47,7 +48,9 @@ public class DatabaseHelper extends SQLiteOpenHelper {
             "position INTEGER NOT NULL," +
             "title TEXT NOT NULL," +
             "color TEXT NOT NULL," +
-            "state TEXT NOT NULL" +
+            "state TEXT NOT NULL," +
+            "source TEXT NOT NULL DEFAULT 'recurring'," +
+            "queue_item_id INTEGER" +
         ")");
 
         db.execSQL("CREATE TABLE action_log (" +
@@ -72,7 +75,13 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 
     @Override
     public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
-        // Future migrations go here
+        if (oldVersion < 2) {
+            db.execSQL("ALTER TABLE daily_tasks ADD COLUMN source TEXT NOT NULL DEFAULT 'recurring'");
+        }
+        if (oldVersion < 3) {
+            db.execSQL("ALTER TABLE todo_queue ADD COLUMN state TEXT NOT NULL DEFAULT 'pending'");
+            db.execSQL("ALTER TABLE daily_tasks ADD COLUMN queue_item_id INTEGER");
+        }
     }
 
     // ─── Settings ──────────────────────────────────────────────────────────────
@@ -164,6 +173,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         int dayOfWeek = date.getDayOfWeek().getValue(); // 1=Mon..7=Sun
 
         int position = 0;
+        int queueOffset = 0;
         for (RecurringTask rt : recurring) {
             boolean applies = false;
             switch (rt.type) {
@@ -198,32 +208,35 @@ public class DatabaseHelper extends SQLiteOpenHelper {
             if (!applies) continue;
 
             if (RecurringTask.TYPE_QUEUE_SLOT.equals(rt.type)) {
-                QueueTask qt = popQueueTask(db);
+                QueueTask qt = peekQueueTask(db, queueOffset);
                 if (qt != null) {
-                    insertDailyTask(db, today, position++, qt.title, qt.color);
+                    insertDailyTask(db, today, position++, qt.title, qt.color, "queue_slot", qt.id);
+                    queueOffset++;
                 }
             } else {
-                insertDailyTask(db, today, position++, rt.title, rt.color);
+                insertDailyTask(db, today, position++, rt.title, rt.color, "recurring", 0);
             }
         }
 
         Log.d(TAG, "Generated " + position + " daily tasks for " + today);
     }
 
-    private void insertDailyTask(SQLiteDatabase db, String date, int position, String title, String color) {
+    private void insertDailyTask(SQLiteDatabase db, String date, int position, String title, String color, String source, int queueItemId) {
         ContentValues cv = new ContentValues();
         cv.put("date", date);
         cv.put("position", position);
         cv.put("title", title);
         cv.put("color", color);
         cv.put("state", DailyTask.STATE_PENDING);
+        cv.put("source", source);
+        if (queueItemId > 0) cv.put("queue_item_id", queueItemId);
         db.insert("daily_tasks", null, cv);
     }
 
-    private QueueTask popQueueTask(SQLiteDatabase db) {
+    private QueueTask peekQueueTask(SQLiteDatabase db, int offset) {
         Cursor c = db.rawQuery(
-            "SELECT id, position, title, color FROM todo_queue ORDER BY position ASC LIMIT 1",
-            null);
+            "SELECT id, position, title, color FROM todo_queue WHERE state='pending' ORDER BY position ASC LIMIT 1 OFFSET ?",
+            new String[]{String.valueOf(offset)});
         if (!c.moveToFirst()) {
             c.close();
             return null;
@@ -234,8 +247,51 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         qt.title = c.getString(2);
         qt.color = c.getString(3);
         c.close();
-        db.delete("todo_queue", "id=?", new String[]{String.valueOf(qt.id)});
         return qt;
+    }
+
+    public void fillMissingQueueSlots(String today) {
+        SQLiteDatabase db = getWritableDatabase();
+
+        Cursor c1 = db.rawQuery(
+            "SELECT COUNT(*) FROM recurring_tasks WHERE type=?",
+            new String[]{RecurringTask.TYPE_QUEUE_SLOT});
+        int totalSlots = 0;
+        if (c1.moveToFirst()) totalSlots = c1.getInt(0);
+        c1.close();
+        if (totalSlots == 0) return;
+
+        Cursor c2 = db.rawQuery(
+            "SELECT COUNT(*) FROM daily_tasks WHERE date=? AND source='queue_slot'",
+            new String[]{today});
+        int filledSlots = 0;
+        if (c2.moveToFirst()) filledSlots = c2.getInt(0);
+        c2.close();
+
+        int missing = totalSlots - filledSlots;
+        if (missing <= 0) return;
+
+        Cursor c3 = db.rawQuery(
+            "SELECT COALESCE(MAX(position), -1) FROM daily_tasks WHERE date=?",
+            new String[]{today});
+        int maxPos = -1;
+        if (c3.moveToFirst()) maxPos = c3.getInt(0);
+        c3.close();
+
+        // Get pending queue items not already assigned to today
+        Cursor c4 = db.rawQuery(
+            "SELECT id, title, color FROM todo_queue WHERE state='pending'" +
+            " AND id NOT IN (SELECT queue_item_id FROM daily_tasks WHERE date=? AND source='queue_slot' AND queue_item_id IS NOT NULL)" +
+            " ORDER BY position ASC LIMIT ?",
+            new String[]{today, String.valueOf(missing)});
+        while (c4.moveToNext()) {
+            int qid   = c4.getInt(0);
+            String t  = c4.getString(1);
+            String co = c4.getString(2);
+            insertDailyTask(db, today, ++maxPos, t, co, "queue_slot", qid);
+            Log.d(TAG, "Filled queue slot with: " + t);
+        }
+        c4.close();
     }
 
     public List<DailyTask> getDailyTasks(String date) {
@@ -263,6 +319,22 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         ContentValues cv = new ContentValues();
         cv.put("state", state);
         db.update("daily_tasks", cv, "id=?", new String[]{String.valueOf(id)});
+        if (DailyTask.STATE_COMPLETED.equals(state)) {
+            Cursor c = db.rawQuery(
+                "SELECT source, queue_item_id FROM daily_tasks WHERE id=?",
+                new String[]{String.valueOf(id)});
+            if (c.moveToFirst() && "queue_slot".equals(c.getString(0)) && !c.isNull(1)) {
+                markQueueItemDone(c.getInt(1));
+            }
+            c.close();
+        }
+    }
+
+    public void markQueueItemDone(int id) {
+        SQLiteDatabase db = getWritableDatabase();
+        ContentValues cv = new ContentValues();
+        cv.put("state", "done");
+        db.update("todo_queue", cv, "id=?", new String[]{String.valueOf(id)});
     }
 
     /** Move task 2 positions down among PENDING tasks. */
@@ -337,8 +409,8 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         // Delete original
         db.delete("daily_tasks", "id=?", new String[]{String.valueOf(taskId)});
         // Insert two replacements
-        insertDailyTask(db, date, targetPos, title1, color1);
-        insertDailyTask(db, date, targetPos + 1, title2, color2);
+        insertDailyTask(db, date, targetPos, title1, color1, "recurring", 0);
+        insertDailyTask(db, date, targetPos + 1, title2, color2, "recurring", 0);
     }
 
     // ─── Todo Queue ────────────────────────────────────────────────────────────
@@ -346,7 +418,25 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     public List<QueueTask> getQueueTasks() {
         SQLiteDatabase db = getReadableDatabase();
         Cursor c = db.rawQuery(
-            "SELECT id, position, title, color FROM todo_queue ORDER BY position ASC",
+            "SELECT id, position, title, color FROM todo_queue WHERE state='pending' ORDER BY position ASC",
+            null);
+        List<QueueTask> list = new ArrayList<>();
+        while (c.moveToNext()) {
+            QueueTask t = new QueueTask();
+            t.id = c.getInt(0);
+            t.position = c.getInt(1);
+            t.title = c.getString(2);
+            t.color = c.getString(3);
+            list.add(t);
+        }
+        c.close();
+        return list;
+    }
+
+    public List<QueueTask> getDoneQueueTasks() {
+        SQLiteDatabase db = getReadableDatabase();
+        Cursor c = db.rawQuery(
+            "SELECT id, position, title, color FROM todo_queue WHERE state='done' ORDER BY position ASC",
             null);
         List<QueueTask> list = new ArrayList<>();
         while (c.moveToNext()) {

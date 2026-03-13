@@ -11,13 +11,13 @@
         android:layout_height="?attr/actionBarSize"
         app:navigationIcon="@drawable/ic_back"
         app:title="Todo Queue"
-        app:menu="@menu/toolbar_with_add" />
+        app:menu="@menu/toolbar_queue" />
 
     <!-- Info label -->
     <TextView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Items are consumed from top when a Queue Slot is filled."
+        android:text="Items stay in the queue until marked done. Queue Slots pull from the top."
         android:textSize="12sp"
         android:textColor="@color/text_secondary"
         android:padding="8dp" />

@@ -34,6 +34,8 @@ public class DayManager {
             Log.d(TAG, "Rolling over day: " + today);
             db.generateDailyTasks(today);
             db.logAction("DAY_START", null, today);
+        } else {
+            db.fillMissingQueueSlots(today);
         }
     }
 }

@@ -35,6 +35,7 @@ public class TodoQueueActivity extends AppCompatActivity {
         toolbar.setNavigationOnClickListener(v -> finish());
         toolbar.setOnMenuItemClickListener(item -> {
             if (item.getItemId() == R.id.action_add) { showAddDialog(); return true; }
+            if (item.getItemId() == R.id.action_done_items) { showDoneItems(); return true; }
             return false;
         });
     }
@@ -71,6 +72,7 @@ public class TodoQueueActivity extends AppCompatActivity {
             Button btnUp   = convertView.findViewById(R.id.btn_up);
             Button btnDown = convertView.findViewById(R.id.btn_down);
             Button btnSplit  = convertView.findViewById(R.id.btn_split);
+            Button btnDone   = convertView.findViewById(R.id.btn_done);
             Button btnDelete = convertView.findViewById(R.id.btn_delete);
 
             title.setText(task.title);
@@ -88,6 +90,11 @@ public class TodoQueueActivity extends AppCompatActivity {
                 reload();
             });
             btnSplit.setOnClickListener(v -> showSplitDialog(task));
+            btnDone.setOnClickListener(v -> {
+                db.markQueueItemDone(task.id);
+                exportOrg();
+                reload();
+            });
             btnDelete.setOnClickListener(v -> {
                 new AlertDialog.Builder(TodoQueueActivity.this)
                     .setTitle("Delete task?")
@@ -158,6 +165,27 @@ public class TodoQueueActivity extends AppCompatActivity {
                 reload();
             })
             .setNegativeButton("Cancel", null)
+            .show();
+    }
+
+    private void showDoneItems() {
+        List<QueueTask> done = db.getDoneQueueTasks();
+        if (done.isEmpty()) {
+            new android.app.AlertDialog.Builder(this)
+                .setTitle("Done items")
+                .setMessage("No completed items yet.")
+                .setPositiveButton("OK", null)
+                .show();
+            return;
+        }
+        StringBuilder sb = new StringBuilder();
+        for (QueueTask t : done) {
+            sb.append("• ").append(t.title).append("\n");
+        }
+        new android.app.AlertDialog.Builder(this)
+            .setTitle("Done items")
+            .setMessage(sb.toString().trim())
+            .setPositiveButton("OK", null)
             .show();
     }
 
