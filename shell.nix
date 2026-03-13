@@ -35,12 +35,14 @@ pkgs.mkShell {
     export PATH="${androidSdk}/libexec/android-sdk/build-tools/34.0.0:$PATH"
     export PATH="${androidSdk}/libexec/android-sdk/platform-tools:$PATH"
     echo "sdk.dir=$ANDROID_HOME" > local.properties
-    echo "Android dev environment ready."
-    echo "  javac:     $(javac -version 2>&1)"
-    echo "  gradle:    $(gradle --version 2>&1 | grep '^Gradle')"
-    echo "  adb:       $(which adb)"
-    echo "  ANDROID_HOME=$ANDROID_HOME"
-    echo ""
-    echo "Run 'make' to build, 'make run' to build+install+launch."
+    if [[ -t 1 ]]; then
+      echo "Android dev environment ready." >&2
+      echo "  javac:     $(javac -version 2>&1)" >&2
+      echo "  gradle:    $(gradle --version 2>&1 | grep '^Gradle')" >&2
+      echo "  adb:       $(which adb)" >&2
+      echo "  ANDROID_HOME=$ANDROID_HOME" >&2
+      echo "" >&2
+      echo "Run 'make' to build, 'make run' to build+install+launch." >&2
+    fi
   '';
 }
