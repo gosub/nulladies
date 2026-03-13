@@ -91,6 +91,7 @@
 
                         <Button
                             android:id="@+id/btn_done"
+                            style="@style/Widget.Material3.Button.OutlinedButton"
                             android:layout_width="0dp"
                             android:layout_height="wrap_content"
                             android:layout_weight="1"
@@ -103,7 +104,7 @@
                             android:layout_width="0dp"
                             android:layout_height="wrap_content"
                             android:layout_weight="1"
-                            android:text="Not Today"
+                            android:text="Skip"
                             android:textSize="13sp" />
 
                         <Button
@@ -112,12 +113,12 @@
                             android:layout_width="0dp"
                             android:layout_height="wrap_content"
                             android:layout_weight="1"
-                            android:text="Push Down"
+                            android:text="Push"
                             android:textSize="13sp" />
 
                         <Button
                             android:id="@+id/btn_split"
-                            style="@style/Widget.Material3.Button.TextButton"
+                            style="@style/Widget.Material3.Button.OutlinedButton"
                             android:layout_width="0dp"
                             android:layout_height="wrap_content"
                             android:layout_weight="1"
@@ -168,7 +169,8 @@
             android:layout_gravity="bottom|end"
             android:layout_margin="@dimen/fab_margin"
             android:contentDescription="Add task"
-            app:srcCompat="@drawable/ic_add" />
+            app:srcCompat="@drawable/ic_add"
+            app:shapeAppearance="@style/ShapeAppearance.Material3.Corner.Full" />
 
     </FrameLayout>
 
