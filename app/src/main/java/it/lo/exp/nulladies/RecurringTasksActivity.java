@@ -3,6 +3,7 @@ package it.lo.exp.nulladies;
 import androidx.appcompat.app.AppCompatActivity;
 import android.app.AlertDialog;
 import android.os.Bundle;
+import com.google.android.material.appbar.MaterialToolbar;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
@@ -44,8 +45,12 @@ public class RecurringTasksActivity extends AppCompatActivity {
         listView  = findViewById(R.id.recurring_list);
         emptyText = findViewById(R.id.recurring_empty_text);
 
-        findViewById(R.id.btn_back).setOnClickListener(v -> finish());
-        findViewById(R.id.btn_add_recurring).setOnClickListener(v -> showEditDialog(null));
+        MaterialToolbar toolbar = findViewById(R.id.toolbar);
+        toolbar.setNavigationOnClickListener(v -> finish());
+        toolbar.setOnMenuItemClickListener(item -> {
+            if (item.getItemId() == R.id.action_add) { showEditDialog(null); return true; }
+            return false;
+        });
     }
 
     @Override

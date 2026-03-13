@@ -11,6 +11,7 @@ import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.TextView;
+import com.google.android.material.appbar.MaterialToolbar;
 
 import java.util.List;
 
@@ -30,8 +31,12 @@ public class TodoQueueActivity extends AppCompatActivity {
         listView  = findViewById(R.id.queue_list);
         emptyText = findViewById(R.id.queue_empty_text);
 
-        findViewById(R.id.btn_back).setOnClickListener(v -> finish());
-        findViewById(R.id.btn_add_queue_item).setOnClickListener(v -> showAddDialog());
+        MaterialToolbar toolbar = findViewById(R.id.toolbar);
+        toolbar.setNavigationOnClickListener(v -> finish());
+        toolbar.setOnMenuItemClickListener(item -> {
+            if (item.getItemId() == R.id.action_add) { showAddDialog(); return true; }
+            return false;
+        });
     }
 
     @Override

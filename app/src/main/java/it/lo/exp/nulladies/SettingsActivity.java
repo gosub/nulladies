@@ -7,6 +7,7 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.widget.Button;
 import android.widget.TextView;
+import com.google.android.material.appbar.MaterialToolbar;
 
 public class SettingsActivity extends AppCompatActivity {
 
@@ -26,7 +27,8 @@ public class SettingsActivity extends AppCompatActivity {
         rolloverTimeDisplay = findViewById(R.id.rollover_time_display);
         backupFolderDisplay = findViewById(R.id.backup_folder_display);
 
-        findViewById(R.id.btn_back).setOnClickListener(v -> finish());
+        MaterialToolbar toolbar = findViewById(R.id.toolbar);
+        toolbar.setNavigationOnClickListener(v -> finish());
 
         findViewById(R.id.btn_pick_time).setOnClickListener(v -> showTimePicker());
         findViewById(R.id.btn_pick_folder).setOnClickListener(v -> pickFolder());

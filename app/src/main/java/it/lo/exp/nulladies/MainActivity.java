@@ -5,7 +5,6 @@ import android.app.AlertDialog;
 import android.content.Intent;
 import android.graphics.drawable.GradientDrawable;
 import android.os.Bundle;
-import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
@@ -89,6 +88,10 @@ public class MainActivity extends AppCompatActivity {
             }
             if (id == R.id.nav_settings) {
                 startActivity(new Intent(this, SettingsActivity.class));
+                return true;
+            }
+            if (id == R.id.nav_log) {
+                startActivity(new Intent(this, LogActivity.class));
                 return true;
             }
             return false;

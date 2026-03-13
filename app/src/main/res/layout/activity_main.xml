@@ -99,6 +99,7 @@
 
                         <Button
                             android:id="@+id/btn_skip"
+                            style="@style/Widget.Material3.Button.OutlinedButton"
                             android:layout_width="0dp"
                             android:layout_height="wrap_content"
                             android:layout_weight="1"
@@ -107,6 +108,7 @@
 
                         <Button
                             android:id="@+id/btn_push"
+                            style="@style/Widget.Material3.Button.OutlinedButton"
                             android:layout_width="0dp"
                             android:layout_height="wrap_content"
                             android:layout_weight="1"
@@ -115,6 +117,7 @@
 
                         <Button
                             android:id="@+id/btn_split"
+                            style="@style/Widget.Material3.Button.TextButton"
                             android:layout_width="0dp"
                             android:layout_height="wrap_content"
                             android:layout_weight="1"
@@ -158,17 +161,14 @@
         </ScrollView>
 
         <!-- FAB -->
-        <Button
+        <com.google.android.material.floatingactionbutton.FloatingActionButton
             android:id="@+id/fab_quick_add"
-            android:layout_width="56dp"
-            android:layout_height="56dp"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
             android:layout_gravity="bottom|end"
             android:layout_margin="@dimen/fab_margin"
-            android:text="+"
-            android:textSize="24sp"
-            android:textColor="#FFFFFF"
-            android:background="#FF1E88E5"
-            android:elevation="6dp" />
+            android:contentDescription="Add task"
+            app:srcCompat="@drawable/ic_add" />
 
     </FrameLayout>
 
