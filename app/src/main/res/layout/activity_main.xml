@@ -21,34 +21,6 @@
                 android:orientation="vertical"
                 android:paddingBottom="80dp">
 
-                <!-- Completed section (hidden when empty) -->
-                <LinearLayout
-                    android:id="@+id/completed_section"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:visibility="gone"
-                    android:background="@color/bg_header"
-                    android:paddingStart="@dimen/grid_padding"
-                    android:paddingEnd="@dimen/grid_padding"
-                    android:paddingTop="6dp"
-                    android:paddingBottom="6dp">
-
-                    <LinearLayout
-                        android:id="@+id/completed_grid"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="vertical" />
-                </LinearLayout>
-
-                <!-- Divider -->
-                <View
-                    android:id="@+id/completed_divider"
-                    android:layout_width="match_parent"
-                    android:layout_height="1dp"
-                    android:background="@color/divider"
-                    android:visibility="gone" />
-
                 <!-- Current task card -->
                 <LinearLayout
                     android:id="@+id/current_task_section"
@@ -127,7 +99,7 @@
                     </LinearLayout>
                 </LinearLayout>
 
-                <!-- All done message (shown when no pending tasks remain) -->
+                <!-- All done message -->
                 <TextView
                     android:id="@+id/all_done_text"
                     android:layout_width="match_parent"
@@ -139,23 +111,15 @@
                     android:padding="24dp"
                     android:visibility="gone" />
 
-                <!-- Divider -->
-                <View
-                    android:id="@+id/remaining_divider"
-                    android:layout_width="match_parent"
-                    android:layout_height="1dp"
-                    android:background="@color/divider"
-                    android:visibility="gone" />
-
-                <!-- Remaining grid -->
+                <!-- Unified task grid -->
                 <LinearLayout
-                    android:id="@+id/remaining_grid"
+                    android:id="@+id/task_grid"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="vertical"
                     android:paddingStart="@dimen/grid_padding"
                     android:paddingEnd="@dimen/grid_padding"
-                    android:paddingTop="6dp"
+                    android:paddingTop="8dp"
                     android:paddingBottom="6dp" />
 
             </LinearLayout>

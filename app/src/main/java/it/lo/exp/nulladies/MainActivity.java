@@ -26,16 +26,12 @@ public class MainActivity extends AppCompatActivity {
     private DayManager dayManager;
 
     // UI references
-    private LinearLayout completedSection;
-    private View completedDivider;
-    private LinearLayout completedGrid;
     private LinearLayout currentTaskSection;
     private View currentTaskColorBar;
     private TextView currentTaskTitle;
     private Button btnDone, btnSkip, btnPush, btnSplit;
     private TextView allDoneText;
-    private View remainingDivider;
-    private LinearLayout remainingGrid;
+    private LinearLayout taskGrid;
 
     // State
     private List<DailyTask> completedTasks = new ArrayList<>();
@@ -51,9 +47,6 @@ public class MainActivity extends AppCompatActivity {
         dayManager = new DayManager(db);
 
         // Bind views
-        completedSection    = findViewById(R.id.completed_section);
-        completedDivider    = findViewById(R.id.completed_divider);
-        completedGrid       = findViewById(R.id.completed_grid);
         currentTaskSection  = findViewById(R.id.current_task_section);
         currentTaskColorBar = findViewById(R.id.current_task_color_bar);
         currentTaskTitle    = findViewById(R.id.current_task_title);
@@ -62,8 +55,7 @@ public class MainActivity extends AppCompatActivity {
         btnPush             = findViewById(R.id.btn_push);
         btnSplit            = findViewById(R.id.btn_split);
         allDoneText         = findViewById(R.id.all_done_text);
-        remainingDivider    = findViewById(R.id.remaining_divider);
-        remainingGrid       = findViewById(R.id.remaining_grid);
+        taskGrid            = findViewById(R.id.task_grid);
 
         // Action buttons
         btnDone.setOnClickListener(v  -> onDone());
@@ -133,27 +125,13 @@ public class MainActivity extends AppCompatActivity {
     // ─── UI ────────────────────────────────────────────────────────────────────
 
     private void refreshUI() {
-        buildCompletedGrid();
         buildCurrentTaskCard();
-        buildRemainingGrid();
-    }
-
-    private void buildCompletedGrid() {
-        completedGrid.removeAllViews();
-        if (completedTasks.isEmpty()) {
-            completedSection.setVisibility(View.GONE);
-            completedDivider.setVisibility(View.GONE);
-            return;
-        }
-        completedSection.setVisibility(View.VISIBLE);
-        completedDivider.setVisibility(View.VISIBLE);
-        addSquaresToContainer(completedGrid, completedTasks, 28, true);
+        buildTaskGrid();
     }
 
     private void buildCurrentTaskCard() {
         if (pendingTasks.isEmpty()) {
             currentTaskSection.setVisibility(View.GONE);
-            // Show "all done" only if we had tasks (completed or skipped exist)
             boolean hadTasks = !completedTasks.isEmpty() || !skippedTasks.isEmpty();
             allDoneText.setVisibility(hadTasks ? View.VISIBLE : View.GONE);
             return;
@@ -170,64 +148,88 @@ public class MainActivity extends AppCompatActivity {
         currentTaskColorBar.setBackground(bar);
     }
 
-    private void buildRemainingGrid() {
-        remainingGrid.removeAllViews();
-        // Remaining = pending tasks except current (index 0) + skipped tasks
-        List<DailyTask> gridTasks = new ArrayList<>();
-        if (pendingTasks.size() > 1) {
-            gridTasks.addAll(pendingTasks.subList(1, pendingTasks.size()));
-        }
-        gridTasks.addAll(skippedTasks);
+    private void buildTaskGrid() {
+        taskGrid.removeAllViews();
 
-        boolean showDivider = !gridTasks.isEmpty() && !completedTasks.isEmpty();
-        remainingDivider.setVisibility(showDivider ? View.VISIBLE : View.GONE);
+        // Order: completed → pending → skipped
+        List<DailyTask> all = new ArrayList<>();
+        all.addAll(completedTasks);
+        all.addAll(pendingTasks);
+        all.addAll(skippedTasks);
+        if (all.isEmpty()) return;
 
-        if (!gridTasks.isEmpty()) {
-            addSquaresToContainer(remainingGrid, gridTasks, 52, false);
-        }
-    }
+        float density  = getResources().getDisplayMetrics().density;
+        int squarePx   = (int)(36 * density);
+        int marginPx   = (int)(3 * density);
+        int cornerPx   = (int)(7 * density);
+        int strokePx   = (int)(2.5f * density);
+        int screenW    = getResources().getDisplayMetrics().widthPixels;
+        int available  = screenW - (int)(16 * density);
+        int cols       = Math.max(1, available / (squarePx + marginPx * 2));
 
-    private void addSquaresToContainer(LinearLayout container, List<DailyTask> tasks,
-                                       int squareDp, boolean compact) {
-        float density = getResources().getDisplayMetrics().density;
-        int squarePx  = (int)(squareDp * density);
-        int marginPx  = (int)(3 * density);
-        int screenW   = getResources().getDisplayMetrics().widthPixels;
-        int available = screenW - (int)(16 * density);
-        int cols      = Math.max(1, available / (squarePx + marginPx * 2));
+        // Index of the current (first pending) task in the unified list
+        int currentIdx = completedTasks.isEmpty() ? 0 : completedTasks.size();
 
         LinearLayout row = null;
-        for (int i = 0; i < tasks.size(); i++) {
+        for (int i = 0; i < all.size(); i++) {
             if (i % cols == 0) {
                 row = new LinearLayout(this);
                 row.setOrientation(LinearLayout.HORIZONTAL);
-                container.addView(row);
+                taskGrid.addView(row);
             }
-            DailyTask task = tasks.get(i);
-            View square = new View(this);
-            LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(squarePx, squarePx);
-            lp.setMargins(marginPx, marginPx, marginPx, marginPx);
-            square.setLayoutParams(lp);
+            DailyTask task = all.get(i);
+            boolean isDone    = DailyTask.STATE_COMPLETED.equals(task.state);
+            boolean isSkipped = DailyTask.STATE_SKIPPED.equals(task.state);
+            boolean isCurrent = !pendingTasks.isEmpty() && i == currentIdx;
+
+            int baseColor = TaskColor.fromName(task.color).toArgb();
+            int displayColor = (isDone || isSkipped) ? mutedColor(baseColor) : baseColor;
 
             GradientDrawable d = new GradientDrawable();
             d.setShape(GradientDrawable.RECTANGLE);
-            d.setColor(TaskColor.fromName(task.color).toArgb());
-            square.setBackground(d);
-
-            if (DailyTask.STATE_SKIPPED.equals(task.state)) {
-                square.setAlpha(0.35f);
+            d.setCornerRadius(cornerPx);
+            d.setColor(displayColor);
+            if (isCurrent) {
+                d.setStroke(strokePx, 0xFF1A1A1A);
             }
 
-            if (!compact) {
-                final int taskId = task.id;
-                square.setOnClickListener(v -> {
-                    db.promoteTask(taskId, today());
-                    refreshData();
-                    refreshUI();
-                });
+            LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(squarePx, squarePx);
+            lp.setMargins(marginPx, marginPx, marginPx, marginPx);
+
+            if (isDone) {
+                // TextView so we can overlay a checkmark
+                TextView cell = new TextView(this);
+                cell.setLayoutParams(lp);
+                cell.setBackground(d);
+                cell.setText("✓");
+                cell.setTextColor(0x88000000);
+                cell.setTextSize(android.util.TypedValue.COMPLEX_UNIT_PX, squarePx * 0.55f);
+                cell.setGravity(android.view.Gravity.CENTER);
+                if (row != null) row.addView(cell);
+            } else {
+                View cell = new View(this);
+                cell.setLayoutParams(lp);
+                cell.setBackground(d);
+                if (!isSkipped && !isCurrent) {
+                    // Tapping a pending non-current square promotes it
+                    final int taskId = task.id;
+                    cell.setOnClickListener(v -> {
+                        db.promoteTask(taskId, today());
+                        refreshData();
+                        refreshUI();
+                    });
+                }
+                if (row != null) row.addView(cell);
             }
-            if (row != null) row.addView(square);
         }
+    }
+
+    private static int mutedColor(int color) {
+        float[] hsv = new float[3];
+        android.graphics.Color.colorToHSV(color, hsv);
+        hsv[1] *= 0.28f;
+        hsv[2] = Math.min(1f, hsv[2] * 1.15f);
+        return android.graphics.Color.HSVToColor(hsv);
     }
 
     // ─── Actions ───────────────────────────────────────────────────────────────
