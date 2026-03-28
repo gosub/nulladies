@@ -187,11 +187,12 @@ public class MainActivity extends AppCompatActivity {
     private void buildTaskGrid() {
         taskGrid.removeAllViews();
 
-        // Order: completed → pending → skipped
+        // Order by position (as defined in recurring tasks)
         List<DailyTask> all = new ArrayList<>();
         all.addAll(completedTasks);
         all.addAll(pendingTasks);
         all.addAll(skippedTasks);
+        all.sort((a, b) -> Integer.compare(a.position, b.position));
         if (all.isEmpty()) return;
 
         float density  = getResources().getDisplayMetrics().density;
