@@ -53,6 +53,15 @@
                         android:textStyle="bold" />
 
                     <ImageButton
+                        android:id="@+id/btn_split"
+                        android:layout_width="44dp"
+                        android:layout_height="44dp"
+                        android:src="@drawable/ic_split"
+                        android:background="?attr/selectableItemBackgroundBorderless"
+                        android:contentDescription="Split"
+                        android:visibility="gone" />
+
+                    <ImageButton
                         android:id="@+id/btn_done"
                         android:layout_width="44dp"
                         android:layout_height="44dp"
@@ -96,35 +105,16 @@
             </LinearLayout>
         </ScrollView>
 
-        <!-- FABs (stacked) -->
-        <LinearLayout
+        <!-- FAB -->
+        <com.google.android.material.floatingactionbutton.FloatingActionButton
+            android:id="@+id/fab_quick_add"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_gravity="bottom|end"
             android:layout_margin="@dimen/fab_margin"
-            android:orientation="vertical"
-            android:gravity="end">
-
-            <com.google.android.material.floatingactionbutton.FloatingActionButton
-                android:id="@+id/fab_split"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginBottom="12dp"
-                android:contentDescription="Split task"
-                android:visibility="gone"
-                app:fabSize="mini"
-                app:srcCompat="@drawable/ic_split"
-                app:shapeAppearance="@style/ShapeAppearance.Material3.Corner.Full" />
-
-            <com.google.android.material.floatingactionbutton.FloatingActionButton
-                android:id="@+id/fab_quick_add"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:contentDescription="Add task"
-                app:srcCompat="@drawable/ic_add"
-                app:shapeAppearance="@style/ShapeAppearance.Material3.Corner.Full" />
-
-        </LinearLayout>
+            android:contentDescription="Add task"
+            app:srcCompat="@drawable/ic_add"
+            app:shapeAppearance="@style/ShapeAppearance.Material3.Corner.Full" />
 
     </FrameLayout>
 

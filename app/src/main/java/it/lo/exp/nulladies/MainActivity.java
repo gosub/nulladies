@@ -14,7 +14,6 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.util.Log;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
-import com.google.android.material.floatingactionbutton.FloatingActionButton;
 
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
@@ -32,10 +31,9 @@ public class MainActivity extends AppCompatActivity {
     private LinearLayout currentTaskSection;
     private View currentTaskColorBar;
     private TextView currentTaskTitle;
-    private ImageButton btnDone, btnSkip;
+    private ImageButton btnSplit, btnDone, btnSkip;
     private TextView allDoneText;
     private LinearLayout taskGrid;
-    private FloatingActionButton fabSplit;
 
     // State
     private List<DailyTask> completedTasks = new ArrayList<>();
@@ -55,22 +53,22 @@ public class MainActivity extends AppCompatActivity {
         currentTaskSection  = findViewById(R.id.current_task_section);
         currentTaskColorBar = findViewById(R.id.current_task_color_bar);
         currentTaskTitle    = findViewById(R.id.current_task_title);
+        btnSplit            = findViewById(R.id.btn_split);
         btnDone             = findViewById(R.id.btn_done);
         btnSkip             = findViewById(R.id.btn_skip);
         allDoneText         = findViewById(R.id.all_done_text);
         taskGrid            = findViewById(R.id.task_grid);
-        fabSplit            = findViewById(R.id.fab_split);
 
         // Action buttons
-        btnDone.setOnClickListener(v -> onDone());
-        btnSkip.setOnClickListener(v -> onSkip());
-
-        // FABs
-        findViewById(R.id.fab_quick_add).setOnClickListener(v -> showQuickAddDialog());
-        fabSplit.setOnClickListener(v -> {
+        btnSplit.setOnClickListener(v -> {
             DailyTask sel = findSelectedTask();
             if (sel != null) showSplitDialog(sel);
         });
+        btnDone.setOnClickListener(v -> onDone());
+        btnSkip.setOnClickListener(v -> onSkip());
+
+        // FAB
+        findViewById(R.id.fab_quick_add).setOnClickListener(v -> showQuickAddDialog());
 
         // Bottom navigation
         BottomNavigationView nav = findViewById(R.id.bottom_nav);
@@ -153,7 +151,7 @@ public class MainActivity extends AppCompatActivity {
             currentTaskSection.setVisibility(View.GONE);
             boolean hadTasks = !completedTasks.isEmpty() || !skippedTasks.isEmpty();
             allDoneText.setVisibility(hadTasks ? View.VISIBLE : View.GONE);
-            fabSplit.setVisibility(View.GONE);
+            btnSplit.setVisibility(View.GONE);
             return;
         }
         allDoneText.setVisibility(View.GONE);
@@ -182,8 +180,8 @@ public class MainActivity extends AppCompatActivity {
             btnSkip.setVisibility(View.VISIBLE);
         }
 
-        // fab_split visible only for queue-slot tasks
-        fabSplit.setVisibility("queue_slot".equals(sel.source) ? View.VISIBLE : View.GONE);
+        // btn_split visible only for queue-slot tasks
+        btnSplit.setVisibility("queue_slot".equals(sel.source) ? View.VISIBLE : View.GONE);
     }
 
     private void buildTaskGrid() {
