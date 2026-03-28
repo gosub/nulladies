@@ -11,7 +11,9 @@ import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 public class DatabaseHelper extends SQLiteOpenHelper {
 
@@ -309,23 +311,33 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     public void fillMissingQueueSlots(String today) {
         SQLiteDatabase db = getWritableDatabase();
 
+        // Get all queue slot recurring tasks in position order
+        List<RecurringTask> allSlots = new ArrayList<>();
         Cursor c1 = db.rawQuery(
-            "SELECT COUNT(*) FROM recurring_tasks WHERE type=?",
+            "SELECT id FROM recurring_tasks WHERE type=? ORDER BY position ASC",
             new String[]{RecurringTask.TYPE_QUEUE_SLOT});
-        int totalSlots = 0;
-        if (c1.moveToFirst()) totalSlots = c1.getInt(0);
+        while (c1.moveToNext()) {
+            RecurringTask rt = new RecurringTask();
+            rt.id = c1.getInt(0);
+            allSlots.add(rt);
+        }
         c1.close();
-        if (totalSlots == 0) return;
+        if (allSlots.isEmpty()) return;
 
+        // Find which recurring slot IDs are already filled for today
+        Set<Integer> filledSlotIds = new HashSet<>();
         Cursor c2 = db.rawQuery(
-            "SELECT COUNT(*) FROM daily_tasks WHERE date=? AND source='queue_slot'",
+            "SELECT recurring_task_id FROM daily_tasks WHERE date=? AND source='queue_slot'",
             new String[]{today});
-        int filledSlots = 0;
-        if (c2.moveToFirst()) filledSlots = c2.getInt(0);
+        while (c2.moveToNext()) filledSlotIds.add(c2.getInt(0));
         c2.close();
 
-        int missing = totalSlots - filledSlots;
-        if (missing <= 0) return;
+        // Collect unfilled slots in order
+        List<Integer> unfilledSlotIds = new ArrayList<>();
+        for (RecurringTask rt : allSlots) {
+            if (!filledSlotIds.contains(rt.id)) unfilledSlotIds.add(rt.id);
+        }
+        if (unfilledSlotIds.isEmpty()) return;
 
         Cursor c3 = db.rawQuery(
             "SELECT COALESCE(MAX(position), -1) FROM daily_tasks WHERE date=?",
@@ -339,12 +351,13 @@ public class DatabaseHelper extends SQLiteOpenHelper {
             "SELECT id, title, color FROM todo_queue WHERE state='pending'" +
             " AND id NOT IN (SELECT queue_item_id FROM daily_tasks WHERE date=? AND source='queue_slot' AND queue_item_id IS NOT NULL)" +
             " ORDER BY position ASC LIMIT ?",
-            new String[]{today, String.valueOf(missing)});
-        while (c4.moveToNext()) {
-            int qid   = c4.getInt(0);
-            String t  = c4.getString(1);
+            new String[]{today, String.valueOf(unfilledSlotIds.size())});
+        int i = 0;
+        while (c4.moveToNext() && i < unfilledSlotIds.size()) {
+            int qid  = c4.getInt(0);
+            String t = c4.getString(1);
             String co = c4.getString(2);
-            insertDailyTask(db, today, ++maxPos, t, co, "queue_slot", qid, 0);
+            insertDailyTask(db, today, ++maxPos, t, co, "queue_slot", qid, unfilledSlotIds.get(i++));
             Log.d(TAG, "Filled queue slot with: " + t);
         }
         c4.close();
