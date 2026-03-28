@@ -353,7 +353,9 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     public List<DailyTask> getDailyTasks(String date) {
         SQLiteDatabase db = getReadableDatabase();
         Cursor c = db.rawQuery(
-            "SELECT id, date, position, title, color, state FROM daily_tasks WHERE date=? ORDER BY position ASC",
+            "SELECT dt.id, dt.date, dt.position, dt.title, dt.color, dt.state, dt.source, dt.queue_item_id" +
+            " FROM daily_tasks dt LEFT JOIN recurring_tasks rt ON dt.recurring_task_id = rt.id" +
+            " WHERE dt.date=? ORDER BY COALESCE(rt.position, dt.position) ASC",
             new String[]{date});
         List<DailyTask> list = new ArrayList<>();
         while (c.moveToNext()) {
@@ -364,6 +366,8 @@ public class DatabaseHelper extends SQLiteOpenHelper {
             t.title = c.getString(3);
             t.color = c.getString(4);
             t.state = c.getString(5);
+            t.source = c.isNull(6) ? "recurring" : c.getString(6);
+            t.queueItemId = c.isNull(7) ? 0 : c.getInt(7);
             list.add(t);
         }
         c.close();

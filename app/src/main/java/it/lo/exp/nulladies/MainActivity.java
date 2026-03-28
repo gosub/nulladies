@@ -187,7 +187,7 @@ public class MainActivity extends AppCompatActivity {
     private void buildTaskGrid() {
         taskGrid.removeAllViews();
 
-        // Order by position (as defined in recurring tasks)
+        // Order follows recurring_tasks.position (enforced by getDailyTasks query)
         List<DailyTask> all = new ArrayList<>();
         all.addAll(completedTasks);
         all.addAll(pendingTasks);
