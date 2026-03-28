@@ -36,6 +36,7 @@ public class MainActivity extends AppCompatActivity {
     private LinearLayout taskGrid;
 
     // State
+    private List<DailyTask> allTasks       = new ArrayList<>();
     private List<DailyTask> completedTasks = new ArrayList<>();
     private List<DailyTask> pendingTasks   = new ArrayList<>();
     private List<DailyTask> skippedTasks   = new ArrayList<>();
@@ -117,11 +118,11 @@ public class MainActivity extends AppCompatActivity {
 
     private void refreshData() {
         String today = today();
-        List<DailyTask> all = db.getDailyTasks(today);
+        allTasks = db.getDailyTasks(today);
         completedTasks.clear();
         pendingTasks.clear();
         skippedTasks.clear();
-        for (DailyTask t : all) {
+        for (DailyTask t : allTasks) {
             switch (t.state) {
                 case DailyTask.STATE_COMPLETED: completedTasks.add(t); break;
                 case DailyTask.STATE_SKIPPED:   skippedTasks.add(t);   break;
@@ -187,12 +188,8 @@ public class MainActivity extends AppCompatActivity {
     private void buildTaskGrid() {
         taskGrid.removeAllViews();
 
-        // Order follows recurring_tasks.position (enforced by getDailyTasks query)
-        List<DailyTask> all = new ArrayList<>();
-        all.addAll(completedTasks);
-        all.addAll(pendingTasks);
-        all.addAll(skippedTasks);
-        all.sort((a, b) -> Integer.compare(a.position, b.position));
+        // Order comes directly from getDailyTasks (JOIN-sorted by recurring_tasks.position)
+        List<DailyTask> all = allTasks;
         if (all.isEmpty()) return;
 
         float density  = getResources().getDisplayMetrics().density;
