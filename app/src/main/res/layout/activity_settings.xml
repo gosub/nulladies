@@ -103,6 +103,52 @@
                 android:layout_height="wrap_content"
                 android:text="Choose Folder" />
 
+            <!-- Debug section (shown only in debug builds via BuildConfig.DEBUG) -->
+            <LinearLayout
+                android:id="@+id/debug_section"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:visibility="gone">
+
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="1dp"
+                    android:background="@color/divider"
+                    android:layout_marginTop="16dp"
+                    android:layout_marginBottom="16dp" />
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Debug"
+                    android:textSize="16sp"
+                    android:textStyle="bold"
+                    android:textColor="@color/text_primary"
+                    android:layout_marginBottom="12dp" />
+
+                <Button
+                    android:id="@+id/btn_debug_reset_today"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Reset today"
+                    android:layout_marginBottom="8dp" />
+
+                <Button
+                    android:id="@+id/btn_debug_db_stats"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="DB stats"
+                    android:layout_marginBottom="8dp" />
+
+                <Button
+                    android:id="@+id/btn_debug_wipe_db"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Wipe database" />
+
+            </LinearLayout>
+
         </LinearLayout>
     </ScrollView>
 </LinearLayout>

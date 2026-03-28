@@ -35,6 +35,7 @@ public class DayManager {
             db.generateDailyTasks(today);
             db.logAction("DAY_START", null, today);
         } else {
+            db.fillMissingRecurringTasks(today);
             db.fillMissingQueueSlots(today);
         }
     }

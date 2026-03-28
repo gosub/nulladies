@@ -1,13 +1,18 @@
 package it.lo.exp.nulladies;
 
 import androidx.appcompat.app.AppCompatActivity;
+import android.app.AlertDialog;
 import android.app.TimePickerDialog;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
+import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
+import android.widget.Toast;
 import com.google.android.material.appbar.MaterialToolbar;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 
 public class SettingsActivity extends AppCompatActivity {
 
@@ -32,6 +37,13 @@ public class SettingsActivity extends AppCompatActivity {
 
         findViewById(R.id.btn_pick_time).setOnClickListener(v -> showTimePicker());
         findViewById(R.id.btn_pick_folder).setOnClickListener(v -> pickFolder());
+
+        if (BuildConfig.DEBUG) {
+            findViewById(R.id.debug_section).setVisibility(View.VISIBLE);
+            findViewById(R.id.btn_debug_reset_today).setOnClickListener(v -> resetToday());
+            findViewById(R.id.btn_debug_db_stats).setOnClickListener(v -> showDbStats());
+            findViewById(R.id.btn_debug_wipe_db).setOnClickListener(v -> confirmWipeDb());
+        }
 
         loadSettings();
     }
@@ -74,6 +86,40 @@ public class SettingsActivity extends AppCompatActivity {
     private void pickFolder() {
         Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT_TREE);
         startActivityForResult(intent, REQUEST_BACKUP_FOLDER);
+    }
+
+    private void resetToday() {
+        String today = LocalDate.now().format(DateTimeFormatter.ISO_LOCAL_DATE);
+        new AlertDialog.Builder(this)
+            .setTitle("Reset today?")
+            .setMessage("Deletes today's tasks and DAY_START log entry. The next app resume will regenerate the day.")
+            .setPositiveButton("Reset", (d, w) -> {
+                db.resetToday(today);
+                Toast.makeText(this, "Today reset. Go back and reopen the app.", Toast.LENGTH_LONG).show();
+            })
+            .setNegativeButton("Cancel", null)
+            .show();
+    }
+
+    private void showDbStats() {
+        new AlertDialog.Builder(this)
+            .setTitle("DB stats")
+            .setMessage(db.getDbStats())
+            .setPositiveButton("OK", null)
+            .show();
+    }
+
+    private void confirmWipeDb() {
+        new AlertDialog.Builder(this)
+            .setTitle("Wipe database?")
+            .setMessage("Deletes all data. The app will close and start fresh on next launch.")
+            .setPositiveButton("Wipe", (d, w) -> {
+                db.close();
+                getApplicationContext().deleteDatabase("nulladies.db");
+                finishAffinity();
+            })
+            .setNegativeButton("Cancel", null)
+            .show();
     }
 
     @Override

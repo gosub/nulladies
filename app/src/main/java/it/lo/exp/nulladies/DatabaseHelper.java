@@ -17,7 +17,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 
     private static final String TAG = "NullaDies";
     private static final String DB_NAME = "nulladies.db";
-    private static final int DB_VERSION = 3;
+    private static final int DB_VERSION = 4;
 
     public DatabaseHelper(Context context) {
         super(context, DB_NAME, null, DB_VERSION);
@@ -50,7 +50,8 @@ public class DatabaseHelper extends SQLiteOpenHelper {
             "color TEXT NOT NULL," +
             "state TEXT NOT NULL," +
             "source TEXT NOT NULL DEFAULT 'recurring'," +
-            "queue_item_id INTEGER" +
+            "queue_item_id INTEGER," +
+            "recurring_task_id INTEGER" +
         ")");
 
         db.execSQL("CREATE TABLE action_log (" +
@@ -81,6 +82,9 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         if (oldVersion < 3) {
             db.execSQL("ALTER TABLE todo_queue ADD COLUMN state TEXT NOT NULL DEFAULT 'pending'");
             db.execSQL("ALTER TABLE daily_tasks ADD COLUMN queue_item_id INTEGER");
+        }
+        if (oldVersion < 4) {
+            db.execSQL("ALTER TABLE daily_tasks ADD COLUMN recurring_task_id INTEGER");
         }
     }
 
@@ -210,18 +214,18 @@ public class DatabaseHelper extends SQLiteOpenHelper {
             if (RecurringTask.TYPE_QUEUE_SLOT.equals(rt.type)) {
                 QueueTask qt = peekQueueTask(db, queueOffset);
                 if (qt != null) {
-                    insertDailyTask(db, today, position++, qt.title, qt.color, "queue_slot", qt.id);
+                    insertDailyTask(db, today, position++, qt.title, qt.color, "queue_slot", qt.id, rt.id);
                     queueOffset++;
                 }
             } else {
-                insertDailyTask(db, today, position++, rt.title, rt.color, "recurring", 0);
+                insertDailyTask(db, today, position++, rt.title, rt.color, "recurring", 0, rt.id);
             }
         }
 
         Log.d(TAG, "Generated " + position + " daily tasks for " + today);
     }
 
-    private void insertDailyTask(SQLiteDatabase db, String date, int position, String title, String color, String source, int queueItemId) {
+    private void insertDailyTask(SQLiteDatabase db, String date, int position, String title, String color, String source, int queueItemId, int recurringTaskId) {
         ContentValues cv = new ContentValues();
         cv.put("date", date);
         cv.put("position", position);
@@ -230,6 +234,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         cv.put("state", DailyTask.STATE_PENDING);
         cv.put("source", source);
         if (queueItemId > 0) cv.put("queue_item_id", queueItemId);
+        if (recurringTaskId > 0) cv.put("recurring_task_id", recurringTaskId);
         db.insert("daily_tasks", null, cv);
     }
 
@@ -248,6 +253,57 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         qt.color = c.getString(3);
         c.close();
         return qt;
+    }
+
+    public void fillMissingRecurringTasks(String today) {
+        SQLiteDatabase db = getWritableDatabase();
+        List<RecurringTask> recurring = getRecurringTasks();
+        LocalDate date = LocalDate.parse(today, DateTimeFormatter.ISO_LOCAL_DATE);
+        int dayOfWeek = date.getDayOfWeek().getValue();
+
+        Cursor c = db.rawQuery(
+            "SELECT COALESCE(MAX(position), -1) FROM daily_tasks WHERE date=?",
+            new String[]{today});
+        int maxPos = -1;
+        if (c.moveToFirst()) maxPos = c.getInt(0);
+        c.close();
+
+        for (RecurringTask rt : recurring) {
+            if (RecurringTask.TYPE_QUEUE_SLOT.equals(rt.type)) continue;
+
+            boolean applies = false;
+            switch (rt.type) {
+                case RecurringTask.TYPE_DAILY:
+                    applies = true;
+                    break;
+                case RecurringTask.TYPE_DAYS_OF_WEEK:
+                    if (rt.ruleData != null) {
+                        for (String d : rt.ruleData.split(",")) {
+                            if (d.trim().equals(String.valueOf(dayOfWeek))) { applies = true; break; }
+                        }
+                    }
+                    break;
+                case RecurringTask.TYPE_SPECIFIC_DATES:
+                    if (rt.ruleData != null) {
+                        for (String d : rt.ruleData.split(",")) {
+                            if (d.trim().equals(today)) { applies = true; break; }
+                        }
+                    }
+                    break;
+            }
+            if (!applies) continue;
+
+            // Check if already generated for today
+            Cursor existing = db.rawQuery(
+                "SELECT COUNT(*) FROM daily_tasks WHERE date=? AND recurring_task_id=?",
+                new String[]{today, String.valueOf(rt.id)});
+            boolean alreadyExists = existing.moveToFirst() && existing.getInt(0) > 0;
+            existing.close();
+            if (alreadyExists) continue;
+
+            insertDailyTask(db, today, ++maxPos, rt.title, rt.color, "recurring", 0, rt.id);
+            Log.d(TAG, "Added missing recurring task: " + rt.title);
+        }
     }
 
     public void fillMissingQueueSlots(String today) {
@@ -288,7 +344,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
             int qid   = c4.getInt(0);
             String t  = c4.getString(1);
             String co = c4.getString(2);
-            insertDailyTask(db, today, ++maxPos, t, co, "queue_slot", qid);
+            insertDailyTask(db, today, ++maxPos, t, co, "queue_slot", qid, 0);
             Log.d(TAG, "Filled queue slot with: " + t);
         }
         c4.close();
@@ -409,8 +465,31 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         // Delete original
         db.delete("daily_tasks", "id=?", new String[]{String.valueOf(taskId)});
         // Insert two replacements
-        insertDailyTask(db, date, targetPos, title1, color1, "recurring", 0);
-        insertDailyTask(db, date, targetPos + 1, title2, color2, "recurring", 0);
+        insertDailyTask(db, date, targetPos, title1, color1, "recurring", 0, 0);
+        insertDailyTask(db, date, targetPos + 1, title2, color2, "recurring", 0, 0);
+    }
+
+    // ─── Debug ─────────────────────────────────────────────────────────────────
+
+    public void resetToday(String today) {
+        SQLiteDatabase db = getWritableDatabase();
+        db.delete("daily_tasks", "date=?", new String[]{today});
+        db.delete("action_log", "event_type='DAY_START' AND timestamp LIKE ?",
+            new String[]{today + "%"});
+        Log.d(TAG, "Debug: reset today " + today);
+    }
+
+    public String getDbStats() {
+        SQLiteDatabase db = getReadableDatabase();
+        String[] tables = {"recurring_tasks", "todo_queue", "daily_tasks", "action_log", "settings"};
+        StringBuilder sb = new StringBuilder();
+        for (String table : tables) {
+            Cursor c = db.rawQuery("SELECT COUNT(*) FROM " + table, null);
+            int count = c.moveToFirst() ? c.getInt(0) : 0;
+            c.close();
+            sb.append(table).append(": ").append(count).append("\n");
+        }
+        return sb.toString().trim();
     }
 
     // ─── Todo Queue ────────────────────────────────────────────────────────────
