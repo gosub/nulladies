@@ -126,9 +126,6 @@
                 android:layout_marginBottom="12dp"
                 android:contentDescription="Split task"
                 android:visibility="gone"
-                app:elevation="0dp"
-                app:hoveredFocusedTranslationZ="0dp"
-                app:pressedTranslationZ="0dp"
                 app:fabSize="mini"
                 app:srcCompat="@drawable/ic_split"
                 app:shapeAppearance="@style/ShapeAppearance.Material3.Corner.Full" />
@@ -138,9 +135,6 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:contentDescription="Add task"
-                app:elevation="0dp"
-                app:hoveredFocusedTranslationZ="0dp"
-                app:pressedTranslationZ="0dp"
                 app:srcCompat="@drawable/ic_add"
                 app:shapeAppearance="@style/ShapeAppearance.Material3.Corner.Full" />
 
