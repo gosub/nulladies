@@ -8,8 +8,8 @@ import android.graphics.drawable.GradientDrawable;
 import android.graphics.drawable.LayerDrawable;
 import android.os.Bundle;
 import android.view.View;
-import android.widget.Button;
 import android.widget.EditText;
+import android.widget.ImageButton;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.util.Log;
@@ -32,7 +32,7 @@ public class MainActivity extends AppCompatActivity {
     private LinearLayout currentTaskSection;
     private View currentTaskColorBar;
     private TextView currentTaskTitle;
-    private Button btnDone, btnSkip;
+    private ImageButton btnDone, btnSkip;
     private TextView allDoneText;
     private LinearLayout taskGrid;
     private FloatingActionButton fabSplit;
@@ -166,18 +166,18 @@ public class MainActivity extends AppCompatActivity {
         bar.setColor(TaskColor.fromName(sel.color).toArgb());
         currentTaskColorBar.setBackground(bar);
 
-        // Button labels and visibility depend on selected task state
+        // Button icons and visibility depend on selected task state
         if (DailyTask.STATE_COMPLETED.equals(sel.state)) {
-            btnDone.setText("Un-done");
+            btnDone.setImageResource(R.drawable.ic_undo);
             btnDone.setVisibility(View.VISIBLE);
             btnSkip.setVisibility(View.GONE);
         } else if (DailyTask.STATE_SKIPPED.equals(sel.state)) {
-            btnSkip.setText("Un-skip");
+            btnSkip.setImageResource(R.drawable.ic_undo);
             btnSkip.setVisibility(View.VISIBLE);
             btnDone.setVisibility(View.GONE);
         } else {
-            btnDone.setText("Done");
-            btnSkip.setText("Skip");
+            btnDone.setImageResource(R.drawable.ic_check);
+            btnSkip.setImageResource(R.drawable.ic_skip);
             btnDone.setVisibility(View.VISIBLE);
             btnSkip.setVisibility(View.VISIBLE);
         }
