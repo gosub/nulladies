@@ -3,7 +3,9 @@ package it.lo.exp.nulladies;
 import androidx.appcompat.app.AppCompatActivity;
 import android.app.AlertDialog;
 import android.content.Intent;
+import android.graphics.drawable.Drawable;
 import android.graphics.drawable.GradientDrawable;
+import android.graphics.drawable.LayerDrawable;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.Button;
@@ -12,6 +14,7 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.util.Log;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
+import com.google.android.material.floatingactionbutton.FloatingActionButton;
 
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
@@ -29,14 +32,16 @@ public class MainActivity extends AppCompatActivity {
     private LinearLayout currentTaskSection;
     private View currentTaskColorBar;
     private TextView currentTaskTitle;
-    private Button btnDone, btnSkip, btnPush, btnSplit;
+    private Button btnDone, btnSkip;
     private TextView allDoneText;
     private LinearLayout taskGrid;
+    private FloatingActionButton fabSplit;
 
     // State
     private List<DailyTask> completedTasks = new ArrayList<>();
     private List<DailyTask> pendingTasks   = new ArrayList<>();
     private List<DailyTask> skippedTasks   = new ArrayList<>();
+    private int selectedTaskId = -1;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -52,19 +57,20 @@ public class MainActivity extends AppCompatActivity {
         currentTaskTitle    = findViewById(R.id.current_task_title);
         btnDone             = findViewById(R.id.btn_done);
         btnSkip             = findViewById(R.id.btn_skip);
-        btnPush             = findViewById(R.id.btn_push);
-        btnSplit            = findViewById(R.id.btn_split);
         allDoneText         = findViewById(R.id.all_done_text);
         taskGrid            = findViewById(R.id.task_grid);
+        fabSplit            = findViewById(R.id.fab_split);
 
         // Action buttons
-        btnDone.setOnClickListener(v  -> onDone());
-        btnSkip.setOnClickListener(v  -> onSkip());
-        btnPush.setOnClickListener(v  -> onPush());
-        btnSplit.setOnClickListener(v -> onSplit());
+        btnDone.setOnClickListener(v -> onDone());
+        btnSkip.setOnClickListener(v -> onSkip());
 
-        // FAB
+        // FABs
         findViewById(R.id.fab_quick_add).setOnClickListener(v -> showQuickAddDialog());
+        fabSplit.setOnClickListener(v -> {
+            DailyTask sel = findSelectedTask();
+            if (sel != null) showSplitDialog(sel);
+        });
 
         // Bottom navigation
         BottomNavigationView nav = findViewById(R.id.bottom_nav);
@@ -95,6 +101,10 @@ public class MainActivity extends AppCompatActivity {
         super.onResume();
         dayManager.checkAndRolloverIfNeeded();
         refreshData();
+        // Reset selection if invalid (task no longer exists)
+        if (findSelectedTask() == null) {
+            selectedTaskId = pendingTasks.isEmpty() ? -1 : pendingTasks.get(0).id;
+        }
         refreshUI();
         // Deselect all nav items — this is a launcher screen, not a tab host
         BottomNavigationView nav = findViewById(R.id.bottom_nav);
@@ -122,6 +132,14 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    private DailyTask findSelectedTask() {
+        if (selectedTaskId == -1) return null;
+        for (DailyTask t : completedTasks) if (t.id == selectedTaskId) return t;
+        for (DailyTask t : pendingTasks)   if (t.id == selectedTaskId) return t;
+        for (DailyTask t : skippedTasks)   if (t.id == selectedTaskId) return t;
+        return null;
+    }
+
     // ─── UI ────────────────────────────────────────────────────────────────────
 
     private void refreshUI() {
@@ -130,22 +148,42 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void buildCurrentTaskCard() {
-        if (pendingTasks.isEmpty()) {
+        DailyTask sel = findSelectedTask();
+        if (sel == null) {
             currentTaskSection.setVisibility(View.GONE);
             boolean hadTasks = !completedTasks.isEmpty() || !skippedTasks.isEmpty();
             allDoneText.setVisibility(hadTasks ? View.VISIBLE : View.GONE);
+            fabSplit.setVisibility(View.GONE);
             return;
         }
         allDoneText.setVisibility(View.GONE);
         currentTaskSection.setVisibility(View.VISIBLE);
 
-        DailyTask current = pendingTasks.get(0);
-        currentTaskTitle.setText(current.title);
+        currentTaskTitle.setText(sel.title);
 
         GradientDrawable bar = new GradientDrawable();
         bar.setShape(GradientDrawable.RECTANGLE);
-        bar.setColor(TaskColor.fromName(current.color).toArgb());
+        bar.setColor(TaskColor.fromName(sel.color).toArgb());
         currentTaskColorBar.setBackground(bar);
+
+        // Button labels and visibility depend on selected task state
+        if (DailyTask.STATE_COMPLETED.equals(sel.state)) {
+            btnDone.setText("Un-done");
+            btnDone.setVisibility(View.VISIBLE);
+            btnSkip.setVisibility(View.GONE);
+        } else if (DailyTask.STATE_SKIPPED.equals(sel.state)) {
+            btnSkip.setText("Un-skip");
+            btnSkip.setVisibility(View.VISIBLE);
+            btnDone.setVisibility(View.GONE);
+        } else {
+            btnDone.setText("Done");
+            btnSkip.setText("Skip");
+            btnDone.setVisibility(View.VISIBLE);
+            btnSkip.setVisibility(View.VISIBLE);
+        }
+
+        // fab_split visible only for queue-slot tasks
+        fabSplit.setVisibility("queue_slot".equals(sel.source) ? View.VISIBLE : View.GONE);
     }
 
     private void buildTaskGrid() {
@@ -162,13 +200,10 @@ public class MainActivity extends AppCompatActivity {
         int squarePx   = (int)(36 * density);
         int marginPx   = (int)(3 * density);
         int cornerPx   = (int)(7 * density);
-        int strokePx   = (int)(2.5f * density);
+        int gapPx      = (int)(3 * density);
         int screenW    = getResources().getDisplayMetrics().widthPixels;
         int available  = screenW - (int)(16 * density);
         int cols       = Math.max(1, available / (squarePx + marginPx * 2));
-
-        // Index of the current (first pending) task in the unified list
-        int currentIdx = completedTasks.isEmpty() ? 0 : completedTasks.size();
 
         LinearLayout row = null;
         for (int i = 0; i < all.size(); i++) {
@@ -178,47 +213,63 @@ public class MainActivity extends AppCompatActivity {
                 taskGrid.addView(row);
             }
             DailyTask task = all.get(i);
-            boolean isDone    = DailyTask.STATE_COMPLETED.equals(task.state);
-            boolean isSkipped = DailyTask.STATE_SKIPPED.equals(task.state);
-            boolean isCurrent = !pendingTasks.isEmpty() && i == currentIdx;
+            boolean isDone     = DailyTask.STATE_COMPLETED.equals(task.state);
+            boolean isSkipped  = DailyTask.STATE_SKIPPED.equals(task.state);
+            boolean isSelected = task.id == selectedTaskId;
 
-            int baseColor = TaskColor.fromName(task.color).toArgb();
+            int baseColor    = TaskColor.fromName(task.color).toArgb();
             int displayColor = (isDone || isSkipped) ? mutedColor(baseColor) : baseColor;
-
-            GradientDrawable d = new GradientDrawable();
-            d.setShape(GradientDrawable.RECTANGLE);
-            d.setCornerRadius(cornerPx);
-            d.setColor(displayColor);
-            if (isCurrent) {
-                d.setStroke(strokePx, 0xFF1A1A1A);
-            }
 
             LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(squarePx, squarePx);
             lp.setMargins(marginPx, marginPx, marginPx, marginPx);
 
+            Drawable bg;
+            if (isSelected) {
+                GradientDrawable borderLayer = new GradientDrawable();
+                borderLayer.setShape(GradientDrawable.RECTANGLE);
+                borderLayer.setCornerRadius(cornerPx);
+                borderLayer.setColor(0xFF1A1A1A);
+
+                GradientDrawable fillLayer = new GradientDrawable();
+                fillLayer.setShape(GradientDrawable.RECTANGLE);
+                fillLayer.setCornerRadius(Math.max(0, cornerPx - gapPx));
+                fillLayer.setColor(displayColor);
+
+                LayerDrawable ld = new LayerDrawable(new Drawable[]{borderLayer, fillLayer});
+                ld.setLayerInset(1, gapPx, gapPx, gapPx, gapPx);
+                bg = ld;
+            } else {
+                GradientDrawable d = new GradientDrawable();
+                d.setShape(GradientDrawable.RECTANGLE);
+                d.setCornerRadius(cornerPx);
+                d.setColor(displayColor);
+                bg = d;
+            }
+
             if (isDone) {
-                // TextView so we can overlay a checkmark
+                // TextView to overlay checkmark
                 TextView cell = new TextView(this);
                 cell.setLayoutParams(lp);
-                cell.setBackground(d);
+                cell.setBackground(bg);
                 cell.setText("✓");
                 cell.setTextColor(0x88000000);
                 cell.setTextSize(android.util.TypedValue.COMPLEX_UNIT_PX, squarePx * 0.55f);
                 cell.setGravity(android.view.Gravity.CENTER);
+                final int taskId = task.id;
+                cell.setOnClickListener(v -> {
+                    selectedTaskId = taskId;
+                    refreshUI();
+                });
                 if (row != null) row.addView(cell);
             } else {
                 View cell = new View(this);
                 cell.setLayoutParams(lp);
-                cell.setBackground(d);
-                if (!isSkipped && !isCurrent) {
-                    // Tapping a pending non-current square promotes it
-                    final int taskId = task.id;
-                    cell.setOnClickListener(v -> {
-                        db.promoteTask(taskId, today());
-                        refreshData();
-                        refreshUI();
-                    });
-                }
+                cell.setBackground(bg);
+                final int taskId = task.id;
+                cell.setOnClickListener(v -> {
+                    selectedTaskId = taskId;
+                    refreshUI();
+                });
                 if (row != null) row.addView(cell);
             }
         }
@@ -235,38 +286,33 @@ public class MainActivity extends AppCompatActivity {
     // ─── Actions ───────────────────────────────────────────────────────────────
 
     private void onDone() {
-        if (pendingTasks.isEmpty()) return;
-        DailyTask current = pendingTasks.get(0);
-        db.setDailyTaskState(current.id, DailyTask.STATE_COMPLETED);
-        db.logAction("COMPLETED", current.title, null);
+        DailyTask sel = findSelectedTask();
+        if (sel == null) return;
+        if (DailyTask.STATE_COMPLETED.equals(sel.state)) {
+            db.setDailyTaskState(sel.id, DailyTask.STATE_PENDING);
+            db.logAction("UNDONE", sel.title, null);
+        } else {
+            db.setDailyTaskState(sel.id, DailyTask.STATE_COMPLETED);
+            db.logAction("COMPLETED", sel.title, null);
+        }
         exportOrg();
         refreshData();
         refreshUI();
     }
 
     private void onSkip() {
-        if (pendingTasks.isEmpty()) return;
-        DailyTask current = pendingTasks.get(0);
-        db.setDailyTaskState(current.id, DailyTask.STATE_SKIPPED);
-        db.logAction("SKIPPED", current.title, null);
+        DailyTask sel = findSelectedTask();
+        if (sel == null) return;
+        if (DailyTask.STATE_SKIPPED.equals(sel.state)) {
+            db.setDailyTaskState(sel.id, DailyTask.STATE_PENDING);
+            db.logAction("UNSKIPPED", sel.title, null);
+        } else {
+            db.setDailyTaskState(sel.id, DailyTask.STATE_SKIPPED);
+            db.logAction("SKIPPED", sel.title, null);
+        }
         exportOrg();
         refreshData();
         refreshUI();
-    }
-
-    private void onPush() {
-        if (pendingTasks.isEmpty()) return;
-        DailyTask current = pendingTasks.get(0);
-        db.pushTaskDown(current.id, today());
-        db.logAction("PUSHED", current.title, null);
-        exportOrg();
-        refreshData();
-        refreshUI();
-    }
-
-    private void onSplit() {
-        if (pendingTasks.isEmpty()) return;
-        showSplitDialog(pendingTasks.get(0));
     }
 
     // ─── Dialogs ───────────────────────────────────────────────────────────────
@@ -298,6 +344,7 @@ public class MainActivity extends AppCompatActivity {
                 db.splitDailyTask(task.id, today(), t1, sel1[0].name(), t2, sel2[0].name());
                 db.logAction("SPLIT", task.title, t1 + "|" + t2);
                 exportOrg();
+                selectedTaskId = -1;
                 refreshData();
                 refreshUI();
             })
