@@ -8,6 +8,9 @@ public class DailyTask {
     public String color;
     public String state; // PENDING, COMPLETED, SKIPPED
 
+    public String source = "recurring";
+    public int queueItemId = 0;
+
     public static final String STATE_PENDING   = "PENDING";
     public static final String STATE_COMPLETED = "COMPLETED";
     public static final String STATE_SKIPPED   = "SKIPPED";
