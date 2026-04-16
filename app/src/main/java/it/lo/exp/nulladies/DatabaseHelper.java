@@ -416,7 +416,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     public void markQueueItemDone(int id) {
         SQLiteDatabase db = getWritableDatabase();
         ContentValues cv = new ContentValues();
-        cv.put("state", "done");
+        cv.put("state", QueueTask.STATE_DONE);
         db.update("todo_queue", cv, "id=?", new String[]{String.valueOf(id)});
     }
 
