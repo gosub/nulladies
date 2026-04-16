@@ -13,7 +13,7 @@
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Type"
+            android:text="@string/label_type"
             android:textSize="13sp"
             android:textColor="@color/text_secondary"
             android:layout_marginBottom="4dp" />
@@ -29,7 +29,7 @@
             android:id="@+id/label_title"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Task title"
+            android:text="@string/label_task_title"
             android:textSize="13sp"
             android:textColor="@color/text_secondary"
             android:layout_marginBottom="4dp" />
@@ -38,7 +38,7 @@
             android:id="@+id/edit_title"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:hint="Enter task title"
+            android:hint="@string/hint_task_title"
             android:inputType="text"
             android:maxLines="1"
             android:layout_marginBottom="16dp" />
@@ -48,7 +48,7 @@
             android:id="@+id/label_color"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Color"
+            android:text="@string/label_color"
             android:textSize="13sp"
             android:textColor="@color/text_secondary"
             android:layout_marginBottom="8dp" />
@@ -78,7 +78,7 @@
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Days of week"
+                android:text="@string/label_days_of_week"
                 android:textSize="13sp"
                 android:textColor="@color/text_secondary"
                 android:layout_marginBottom="8dp" />
@@ -90,25 +90,25 @@
 
                 <CheckBox android:id="@+id/cb_mon" android:layout_width="0dp"
                     android:layout_height="wrap_content" android:layout_weight="1"
-                    android:text="Mo" android:gravity="center" />
+                    android:text="@string/day_mon" android:gravity="center" />
                 <CheckBox android:id="@+id/cb_tue" android:layout_width="0dp"
                     android:layout_height="wrap_content" android:layout_weight="1"
-                    android:text="Tu" android:gravity="center" />
+                    android:text="@string/day_tue" android:gravity="center" />
                 <CheckBox android:id="@+id/cb_wed" android:layout_width="0dp"
                     android:layout_height="wrap_content" android:layout_weight="1"
-                    android:text="We" android:gravity="center" />
+                    android:text="@string/day_wed" android:gravity="center" />
                 <CheckBox android:id="@+id/cb_thu" android:layout_width="0dp"
                     android:layout_height="wrap_content" android:layout_weight="1"
-                    android:text="Th" android:gravity="center" />
+                    android:text="@string/day_thu" android:gravity="center" />
                 <CheckBox android:id="@+id/cb_fri" android:layout_width="0dp"
                     android:layout_height="wrap_content" android:layout_weight="1"
-                    android:text="Fr" android:gravity="center" />
+                    android:text="@string/day_fri" android:gravity="center" />
                 <CheckBox android:id="@+id/cb_sat" android:layout_width="0dp"
                     android:layout_height="wrap_content" android:layout_weight="1"
-                    android:text="Sa" android:gravity="center" />
+                    android:text="@string/day_sat" android:gravity="center" />
                 <CheckBox android:id="@+id/cb_sun" android:layout_width="0dp"
                     android:layout_height="wrap_content" android:layout_weight="1"
-                    android:text="Su" android:gravity="center" />
+                    android:text="@string/day_sun" android:gravity="center" />
             </LinearLayout>
         </LinearLayout>
 
@@ -123,7 +123,7 @@
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Specific dates (comma-separated, YYYY-MM-DD)"
+                android:text="@string/label_specific_dates"
                 android:textSize="13sp"
                 android:textColor="@color/text_secondary"
                 android:layout_marginBottom="4dp" />
@@ -132,7 +132,7 @@
                 android:id="@+id/edit_dates"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:hint="2026-01-15,2026-02-01"
+                android:hint="@string/hint_specific_dates"
                 android:inputType="text"
                 android:maxLines="3" />
         </LinearLayout>

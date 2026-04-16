@@ -1,4 +1,75 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">NullaDies</string>
+
+    <!-- Activity titles -->
+    <string name="title_settings">Settings</string>
+    <string name="title_todo_queue">Todo Queue</string>
+    <string name="title_action_log">Action Log</string>
+    <string name="title_recurring_tasks">Recurring Tasks</string>
+
+    <!-- Main screen -->
+    <string name="all_tasks_complete">All tasks complete!</string>
+
+    <!-- Todo queue screen -->
+    <string name="queue_info">Items stay in the queue until marked done. Queue Slots pull from the top.</string>
+    <string name="queue_empty">Queue is empty. Tap + Add to add a task.</string>
+
+    <!-- Recurring tasks screen -->
+    <string name="recurring_info">Order determines priority. Queue Slots pull from the todo queue.</string>
+    <string name="recurring_empty">No recurring tasks. Tap + Add to create one.</string>
+
+    <!-- Action log screen -->
+    <string name="log_empty">No actions recorded yet.</string>
+
+    <!-- Settings screen -->
+    <string name="settings_rollover_label">Day Rollover Time</string>
+    <string name="settings_rollover_desc">The day resets at this time. Default: 00:00</string>
+    <string name="settings_rollover_default">00:00</string>
+    <string name="settings_rollover_change">Change</string>
+    <string name="settings_backup_label">Org-mode Backup Folder</string>
+    <string name="settings_backup_desc">The app writes nulladies_backup.org to this folder on every change.</string>
+    <string name="settings_backup_not_set">Not set</string>
+    <string name="settings_backup_choose">Choose Folder</string>
+    <string name="settings_debug_header">Debug</string>
+    <string name="settings_debug_reset">Reset today</string>
+    <string name="settings_debug_stats">DB stats</string>
+    <string name="settings_debug_wipe">Wipe database</string>
+
+    <!-- Quick add dialog -->
+    <string name="label_task_title">Task title</string>
+    <string name="label_color">Color</string>
+    <string name="hint_task_title">Enter task title</string>
+
+    <!-- Split dialog -->
+    <string name="split_info">The original task will be replaced by two new tasks.</string>
+    <string name="split_first_title">First task title</string>
+    <string name="split_first_color">First task color</string>
+    <string name="split_second_title">Second task title</string>
+    <string name="split_second_color">Second task color</string>
+
+    <!-- Add recurring dialog -->
+    <string name="label_type">Type</string>
+    <string name="label_days_of_week">Days of week</string>
+    <string name="label_specific_dates">Specific dates (comma-separated, YYYY-MM-DD)</string>
+    <string name="hint_specific_dates">2026-01-15,2026-02-01</string>
+
+    <!-- Day abbreviations -->
+    <string name="day_mon">Mo</string>
+    <string name="day_tue">Tu</string>
+    <string name="day_wed">We</string>
+    <string name="day_thu">Th</string>
+    <string name="day_fri">Fr</string>
+    <string name="day_sat">Sa</string>
+    <string name="day_sun">Su</string>
+
+    <!-- Bottom navigation -->
+    <string name="nav_queue">Queue</string>
+    <string name="nav_tasks">Tasks</string>
+    <string name="nav_settings">Settings</string>
+    <string name="nav_log">Log</string>
+
+    <!-- Toolbar menus -->
+    <string name="menu_add">Add</string>
+    <string name="menu_done_items">Done items</string>
 </resources>

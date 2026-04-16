@@ -84,7 +84,7 @@
                     android:id="@+id/all_done_text"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="All tasks complete!"
+                    android:text="@string/all_tasks_complete"
                     android:textSize="16sp"
                     android:textColor="@color/text_secondary"
                     android:gravity="center"

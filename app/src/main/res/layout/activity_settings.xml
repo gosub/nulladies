@@ -10,7 +10,7 @@
         android:layout_width="match_parent"
         android:layout_height="?attr/actionBarSize"
         app:navigationIcon="@drawable/ic_back"
-        app:title="Settings" />
+        app:title="@string/title_settings" />
 
     <ScrollView
         android:layout_width="match_parent"
@@ -26,7 +26,7 @@
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Day Rollover Time"
+                android:text="@string/settings_rollover_label"
                 android:textSize="16sp"
                 android:textStyle="bold"
                 android:textColor="@color/text_primary"
@@ -35,7 +35,7 @@
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="The day resets at this time. Default: 00:00"
+                android:text="@string/settings_rollover_desc"
                 android:textSize="12sp"
                 android:textColor="@color/text_secondary"
                 android:layout_marginBottom="8dp" />
@@ -51,7 +51,7 @@
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
-                    android:text="00:00"
+                    android:text="@string/settings_rollover_default"
                     android:textSize="20sp"
                     android:textColor="@color/text_primary" />
 
@@ -59,7 +59,7 @@
                     android:id="@+id/btn_pick_time"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Change" />
+                    android:text="@string/settings_rollover_change" />
             </LinearLayout>
 
             <!-- Divider -->
@@ -74,7 +74,7 @@
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Org-mode Backup Folder"
+                android:text="@string/settings_backup_label"
                 android:textSize="16sp"
                 android:textStyle="bold"
                 android:textColor="@color/text_primary"
@@ -83,7 +83,7 @@
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="The app writes nulladies_backup.org to this folder on every change."
+                android:text="@string/settings_backup_desc"
                 android:textSize="12sp"
                 android:textColor="@color/text_secondary"
                 android:layout_marginBottom="8dp" />
@@ -92,7 +92,7 @@
                 android:id="@+id/backup_folder_display"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Not set"
+                android:text="@string/settings_backup_not_set"
                 android:textSize="13sp"
                 android:textColor="@color/text_secondary"
                 android:layout_marginBottom="8dp" />
@@ -101,7 +101,7 @@
                 android:id="@+id/btn_pick_folder"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Choose Folder" />
+                android:text="@string/settings_backup_choose" />
 
             <!-- Debug section (shown only in debug builds via BuildConfig.DEBUG) -->
             <LinearLayout
@@ -121,7 +121,7 @@
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="Debug"
+                    android:text="@string/settings_debug_header"
                     android:textSize="16sp"
                     android:textStyle="bold"
                     android:textColor="@color/text_primary"
@@ -131,21 +131,21 @@
                     android:id="@+id/btn_debug_reset_today"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Reset today"
+                    android:text="@string/settings_debug_reset"
                     android:layout_marginBottom="8dp" />
 
                 <Button
                     android:id="@+id/btn_debug_db_stats"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="DB stats"
+                    android:text="@string/settings_debug_stats"
                     android:layout_marginBottom="8dp" />
 
                 <Button
                     android:id="@+id/btn_debug_wipe_db"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Wipe database" />
+                    android:text="@string/settings_debug_wipe" />
 
             </LinearLayout>
 

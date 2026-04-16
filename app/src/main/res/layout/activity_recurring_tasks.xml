@@ -10,14 +10,14 @@
         android:layout_width="match_parent"
         android:layout_height="?attr/actionBarSize"
         app:navigationIcon="@drawable/ic_back"
-        app:title="Recurring Tasks"
+        app:title="@string/title_recurring_tasks"
         app:menu="@menu/toolbar_with_add" />
 
     <!-- Info label -->
     <TextView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Order determines priority. Queue Slots pull from the todo queue."
+        android:text="@string/recurring_info"
         android:textSize="12sp"
         android:textColor="@color/text_secondary"
         android:padding="8dp" />
@@ -27,7 +27,7 @@
         android:id="@+id/recurring_empty_text"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="No recurring tasks. Tap + Add to create one."
+        android:text="@string/recurring_empty"
         android:textSize="14sp"
         android:textColor="@color/text_secondary"
         android:gravity="center"

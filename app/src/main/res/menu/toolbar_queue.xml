@@ -4,10 +4,10 @@
     <item
         android:id="@+id/action_add"
         android:icon="@drawable/ic_add"
-        android:title="Add"
+        android:title="@string/menu_add"
         app:showAsAction="always" />
     <item
         android:id="@+id/action_done_items"
-        android:title="Done items"
+        android:title="@string/menu_done_items"
         app:showAsAction="never" />
 </menu>

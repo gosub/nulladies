@@ -10,14 +10,14 @@
         android:layout_width="match_parent"
         android:layout_height="?attr/actionBarSize"
         app:navigationIcon="@drawable/ic_back"
-        app:title="Todo Queue"
+        app:title="@string/title_todo_queue"
         app:menu="@menu/toolbar_queue" />
 
     <!-- Info label -->
     <TextView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Items stay in the queue until marked done. Queue Slots pull from the top."
+        android:text="@string/queue_info"
         android:textSize="12sp"
         android:textColor="@color/text_secondary"
         android:padding="8dp" />
@@ -27,7 +27,7 @@
         android:id="@+id/queue_empty_text"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Queue is empty. Tap + Add to add a task."
+        android:text="@string/queue_empty"
         android:textSize="14sp"
         android:textColor="@color/text_secondary"
         android:gravity="center"

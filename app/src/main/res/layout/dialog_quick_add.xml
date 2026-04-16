@@ -8,7 +8,7 @@
     <TextView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Task title"
+        android:text="@string/label_task_title"
         android:textSize="13sp"
         android:textColor="@color/text_secondary"
         android:layout_marginBottom="4dp" />
@@ -17,7 +17,7 @@
         android:id="@+id/edit_title"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:hint="Enter task title"
+        android:hint="@string/hint_task_title"
         android:inputType="text"
         android:maxLines="1"
         android:layout_marginBottom="16dp" />
@@ -25,7 +25,7 @@
     <TextView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Color"
+        android:text="@string/label_color"
         android:textSize="13sp"
         android:textColor="@color/text_secondary"
         android:layout_marginBottom="8dp" />

@@ -10,7 +10,7 @@
         android:layout_width="match_parent"
         android:layout_height="?attr/actionBarSize"
         app:navigationIcon="@drawable/ic_back"
-        app:title="Action Log" />
+        app:title="@string/title_action_log" />
 
     <ListView
         android:id="@+id/log_list"
@@ -24,7 +24,7 @@
         android:id="@+id/log_empty_text"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="No actions recorded yet."
+        android:text="@string/log_empty"
         android:textSize="14sp"
         android:textColor="@color/text_secondary"
         android:gravity="center"
