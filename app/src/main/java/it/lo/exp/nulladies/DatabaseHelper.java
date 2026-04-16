@@ -94,12 +94,9 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 
     public String getSetting(String key, String defaultValue) {
         SQLiteDatabase db = getReadableDatabase();
-        Cursor c = db.rawQuery("SELECT value FROM settings WHERE key=?", new String[]{key});
-        try {
+        try (Cursor c = db.rawQuery("SELECT value FROM settings WHERE key=?", new String[]{key})) {
             if (c.moveToFirst()) return c.getString(0);
             return defaultValue;
-        } finally {
-            c.close();
         }
     }
 
@@ -126,105 +123,107 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     public List<String[]> getActionLogForDate(String date) {
         SQLiteDatabase db = getReadableDatabase();
         // timestamp starts with the date string (ISO format: 2026-03-01T...)
-        Cursor c = db.rawQuery(
-            "SELECT timestamp, event_type, task_title, extra_data FROM action_log " +
-            "WHERE timestamp LIKE ? ORDER BY timestamp ASC",
-            new String[]{date + "%"});
-        List<String[]> rows = new ArrayList<>();
-        while (c.moveToNext()) {
-            rows.add(new String[]{c.getString(0), c.getString(1), c.getString(2), c.getString(3)});
+        try (Cursor c = db.rawQuery(
+                "SELECT timestamp, event_type, task_title, extra_data FROM action_log " +
+                "WHERE timestamp LIKE ? ORDER BY timestamp ASC",
+                new String[]{date + "%"})) {
+            List<String[]> rows = new ArrayList<>();
+            while (c.moveToNext()) {
+                rows.add(new String[]{c.getString(0), c.getString(1), c.getString(2), c.getString(3)});
+            }
+            return rows;
         }
-        c.close();
-        return rows;
     }
 
     public List<String[]> getAllActionLog() {
         SQLiteDatabase db = getReadableDatabase();
-        Cursor c = db.rawQuery(
-            "SELECT timestamp, event_type, task_title, extra_data FROM action_log ORDER BY timestamp ASC",
-            null);
-        List<String[]> rows = new ArrayList<>();
-        while (c.moveToNext()) {
-            rows.add(new String[]{c.getString(0), c.getString(1), c.getString(2), c.getString(3)});
+        try (Cursor c = db.rawQuery(
+                "SELECT timestamp, event_type, task_title, extra_data FROM action_log ORDER BY timestamp ASC",
+                null)) {
+            List<String[]> rows = new ArrayList<>();
+            while (c.moveToNext()) {
+                rows.add(new String[]{c.getString(0), c.getString(1), c.getString(2), c.getString(3)});
+            }
+            return rows;
         }
-        c.close();
-        return rows;
     }
 
     // ─── Day Rollover Check ────────────────────────────────────────────────────
 
     public boolean needsRollover(String today) {
         SQLiteDatabase db = getReadableDatabase();
-        Cursor c = db.rawQuery(
-            "SELECT COUNT(*) FROM action_log WHERE event_type='DAY_START' AND timestamp LIKE ?",
-            new String[]{today + "%"});
-        boolean needs = true;
-        if (c.moveToFirst()) {
-            needs = c.getInt(0) == 0;
+        try (Cursor c = db.rawQuery(
+                "SELECT COUNT(*) FROM action_log WHERE event_type='DAY_START' AND timestamp LIKE ?",
+                new String[]{today + "%"})) {
+            if (c.moveToFirst()) return c.getInt(0) == 0;
+            return true;
         }
-        c.close();
-        return needs;
     }
 
     // ─── Daily Tasks ───────────────────────────────────────────────────────────
 
     public void generateDailyTasks(String today) {
         SQLiteDatabase db = getWritableDatabase();
+        db.beginTransaction();
+        try {
+            // Clear any existing tasks for today (shouldn't happen, but safety)
+            db.delete("daily_tasks", "date=?", new String[]{today});
 
-        // Clear any existing tasks for today (shouldn't happen, but safety)
-        db.delete("daily_tasks", "date=?", new String[]{today});
+            List<RecurringTask> recurring = getRecurringTasks();
+            LocalDate date = LocalDate.parse(today, DateTimeFormatter.ISO_LOCAL_DATE);
+            int dayOfWeek = date.getDayOfWeek().getValue(); // 1=Mon..7=Sun
 
-        List<RecurringTask> recurring = getRecurringTasks();
-        LocalDate date = LocalDate.parse(today, DateTimeFormatter.ISO_LOCAL_DATE);
-        int dayOfWeek = date.getDayOfWeek().getValue(); // 1=Mon..7=Sun
-
-        int position = 0;
-        int queueOffset = 0;
-        for (RecurringTask rt : recurring) {
-            boolean applies = false;
-            switch (rt.type) {
-                case RecurringTask.TYPE_DAILY:
-                    applies = true;
-                    break;
-                case RecurringTask.TYPE_DAYS_OF_WEEK:
-                    if (rt.ruleData != null) {
-                        for (String d : rt.ruleData.split(",")) {
-                            if (d.trim().equals(String.valueOf(dayOfWeek))) {
-                                applies = true;
-                                break;
+            int position = 0;
+            int queueOffset = 0;
+            for (RecurringTask rt : recurring) {
+                boolean applies = false;
+                switch (rt.type) {
+                    case RecurringTask.TYPE_DAILY:
+                        applies = true;
+                        break;
+                    case RecurringTask.TYPE_DAYS_OF_WEEK:
+                        if (rt.ruleData != null) {
+                            for (String d : rt.ruleData.split(",")) {
+                                if (d.trim().equals(String.valueOf(dayOfWeek))) {
+                                    applies = true;
+                                    break;
+                                }
                             }
                         }
-                    }
-                    break;
-                case RecurringTask.TYPE_SPECIFIC_DATES:
-                    if (rt.ruleData != null) {
-                        for (String d : rt.ruleData.split(",")) {
-                            if (d.trim().equals(today)) {
-                                applies = true;
-                                break;
+                        break;
+                    case RecurringTask.TYPE_SPECIFIC_DATES:
+                        if (rt.ruleData != null) {
+                            for (String d : rt.ruleData.split(",")) {
+                                if (d.trim().equals(today)) {
+                                    applies = true;
+                                    break;
+                                }
                             }
                         }
-                    }
-                    break;
-                case RecurringTask.TYPE_QUEUE_SLOT:
-                    applies = true;
-                    break;
-            }
-
-            if (!applies) continue;
-
-            if (RecurringTask.TYPE_QUEUE_SLOT.equals(rt.type)) {
-                QueueTask qt = peekQueueTask(db, queueOffset);
-                if (qt != null) {
-                    insertDailyTask(db, today, position++, qt.title, qt.color, "queue_slot", qt.id, rt.id);
-                    queueOffset++;
+                        break;
+                    case RecurringTask.TYPE_QUEUE_SLOT:
+                        applies = true;
+                        break;
                 }
-            } else {
-                insertDailyTask(db, today, position++, rt.title, rt.color, "recurring", 0, rt.id);
-            }
-        }
 
-        Log.d(TAG, "Generated " + position + " daily tasks for " + today);
+                if (!applies) continue;
+
+                if (RecurringTask.TYPE_QUEUE_SLOT.equals(rt.type)) {
+                    QueueTask qt = peekQueueTask(db, queueOffset);
+                    if (qt != null) {
+                        insertDailyTask(db, today, position++, qt.title, qt.color, "queue_slot", qt.id, rt.id);
+                        queueOffset++;
+                    }
+                } else {
+                    insertDailyTask(db, today, position++, rt.title, rt.color, "recurring", 0, rt.id);
+                }
+            }
+
+            db.setTransactionSuccessful();
+            Log.d(TAG, "Generated " + position + " daily tasks for " + today);
+        } finally {
+            db.endTransaction();
+        }
     }
 
     private void insertDailyTask(SQLiteDatabase db, String date, int position, String title, String color, String source, int queueItemId, int recurringTaskId) {
@@ -241,150 +240,161 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     }
 
     private QueueTask peekQueueTask(SQLiteDatabase db, int offset) {
-        Cursor c = db.rawQuery(
-            "SELECT id, position, title, color FROM todo_queue WHERE state='pending' ORDER BY position ASC LIMIT 1 OFFSET ?",
-            new String[]{String.valueOf(offset)});
-        if (!c.moveToFirst()) {
-            c.close();
-            return null;
+        try (Cursor c = db.rawQuery(
+                "SELECT id, position, title, color FROM todo_queue WHERE state='pending' ORDER BY position ASC LIMIT 1 OFFSET ?",
+                new String[]{String.valueOf(offset)})) {
+            if (!c.moveToFirst()) return null;
+            QueueTask qt = new QueueTask();
+            qt.id = c.getInt(0);
+            qt.position = c.getInt(1);
+            qt.title = c.getString(2);
+            qt.color = c.getString(3);
+            return qt;
         }
-        QueueTask qt = new QueueTask();
-        qt.id = c.getInt(0);
-        qt.position = c.getInt(1);
-        qt.title = c.getString(2);
-        qt.color = c.getString(3);
-        c.close();
-        return qt;
     }
 
     public void fillMissingRecurringTasks(String today) {
         SQLiteDatabase db = getWritableDatabase();
-        List<RecurringTask> recurring = getRecurringTasks();
-        LocalDate date = LocalDate.parse(today, DateTimeFormatter.ISO_LOCAL_DATE);
-        int dayOfWeek = date.getDayOfWeek().getValue();
+        db.beginTransaction();
+        try {
+            List<RecurringTask> recurring = getRecurringTasks();
+            LocalDate date = LocalDate.parse(today, DateTimeFormatter.ISO_LOCAL_DATE);
+            int dayOfWeek = date.getDayOfWeek().getValue();
 
-        Cursor c = db.rawQuery(
-            "SELECT COALESCE(MAX(position), -1) FROM daily_tasks WHERE date=?",
-            new String[]{today});
-        int maxPos = -1;
-        if (c.moveToFirst()) maxPos = c.getInt(0);
-        c.close();
-
-        for (RecurringTask rt : recurring) {
-            if (RecurringTask.TYPE_QUEUE_SLOT.equals(rt.type)) continue;
-
-            boolean applies = false;
-            switch (rt.type) {
-                case RecurringTask.TYPE_DAILY:
-                    applies = true;
-                    break;
-                case RecurringTask.TYPE_DAYS_OF_WEEK:
-                    if (rt.ruleData != null) {
-                        for (String d : rt.ruleData.split(",")) {
-                            if (d.trim().equals(String.valueOf(dayOfWeek))) { applies = true; break; }
-                        }
-                    }
-                    break;
-                case RecurringTask.TYPE_SPECIFIC_DATES:
-                    if (rt.ruleData != null) {
-                        for (String d : rt.ruleData.split(",")) {
-                            if (d.trim().equals(today)) { applies = true; break; }
-                        }
-                    }
-                    break;
+            int maxPos;
+            try (Cursor c = db.rawQuery(
+                    "SELECT COALESCE(MAX(position), -1) FROM daily_tasks WHERE date=?",
+                    new String[]{today})) {
+                maxPos = c.moveToFirst() ? c.getInt(0) : -1;
             }
-            if (!applies) continue;
 
-            // Check if already generated for today
-            Cursor existing = db.rawQuery(
-                "SELECT COUNT(*) FROM daily_tasks WHERE date=? AND recurring_task_id=?",
-                new String[]{today, String.valueOf(rt.id)});
-            boolean alreadyExists = existing.moveToFirst() && existing.getInt(0) > 0;
-            existing.close();
-            if (alreadyExists) continue;
+            for (RecurringTask rt : recurring) {
+                if (RecurringTask.TYPE_QUEUE_SLOT.equals(rt.type)) continue;
 
-            insertDailyTask(db, today, ++maxPos, rt.title, rt.color, "recurring", 0, rt.id);
-            Log.d(TAG, "Added missing recurring task: " + rt.title);
+                boolean applies = false;
+                switch (rt.type) {
+                    case RecurringTask.TYPE_DAILY:
+                        applies = true;
+                        break;
+                    case RecurringTask.TYPE_DAYS_OF_WEEK:
+                        if (rt.ruleData != null) {
+                            for (String d : rt.ruleData.split(",")) {
+                                if (d.trim().equals(String.valueOf(dayOfWeek))) { applies = true; break; }
+                            }
+                        }
+                        break;
+                    case RecurringTask.TYPE_SPECIFIC_DATES:
+                        if (rt.ruleData != null) {
+                            for (String d : rt.ruleData.split(",")) {
+                                if (d.trim().equals(today)) { applies = true; break; }
+                            }
+                        }
+                        break;
+                }
+                if (!applies) continue;
+
+                // Check if already generated for today
+                boolean alreadyExists;
+                try (Cursor existing = db.rawQuery(
+                        "SELECT COUNT(*) FROM daily_tasks WHERE date=? AND recurring_task_id=?",
+                        new String[]{today, String.valueOf(rt.id)})) {
+                    alreadyExists = existing.moveToFirst() && existing.getInt(0) > 0;
+                }
+                if (alreadyExists) continue;
+
+                insertDailyTask(db, today, ++maxPos, rt.title, rt.color, "recurring", 0, rt.id);
+                Log.d(TAG, "Added missing recurring task: " + rt.title);
+            }
+
+            db.setTransactionSuccessful();
+        } finally {
+            db.endTransaction();
         }
     }
 
     public void fillMissingQueueSlots(String today) {
         SQLiteDatabase db = getWritableDatabase();
+        db.beginTransaction();
+        try {
+            // Get all queue slot recurring tasks in position order
+            List<RecurringTask> allSlots = new ArrayList<>();
+            try (Cursor c1 = db.rawQuery(
+                    "SELECT id FROM recurring_tasks WHERE type=? ORDER BY position ASC",
+                    new String[]{RecurringTask.TYPE_QUEUE_SLOT})) {
+                while (c1.moveToNext()) {
+                    RecurringTask rt = new RecurringTask();
+                    rt.id = c1.getInt(0);
+                    allSlots.add(rt);
+                }
+            }
+            if (allSlots.isEmpty()) return;
 
-        // Get all queue slot recurring tasks in position order
-        List<RecurringTask> allSlots = new ArrayList<>();
-        Cursor c1 = db.rawQuery(
-            "SELECT id FROM recurring_tasks WHERE type=? ORDER BY position ASC",
-            new String[]{RecurringTask.TYPE_QUEUE_SLOT});
-        while (c1.moveToNext()) {
-            RecurringTask rt = new RecurringTask();
-            rt.id = c1.getInt(0);
-            allSlots.add(rt);
+            // Find which recurring slot IDs are already filled for today
+            Set<Integer> filledSlotIds = new HashSet<>();
+            try (Cursor c2 = db.rawQuery(
+                    "SELECT recurring_task_id FROM daily_tasks WHERE date=? AND source='queue_slot'",
+                    new String[]{today})) {
+                while (c2.moveToNext()) filledSlotIds.add(c2.getInt(0));
+            }
+
+            // Collect unfilled slots in order
+            List<Integer> unfilledSlotIds = new ArrayList<>();
+            for (RecurringTask rt : allSlots) {
+                if (!filledSlotIds.contains(rt.id)) unfilledSlotIds.add(rt.id);
+            }
+            if (unfilledSlotIds.isEmpty()) return;
+
+            int maxPos;
+            try (Cursor c3 = db.rawQuery(
+                    "SELECT COALESCE(MAX(position), -1) FROM daily_tasks WHERE date=?",
+                    new String[]{today})) {
+                maxPos = c3.moveToFirst() ? c3.getInt(0) : -1;
+            }
+
+            // Get pending queue items not already assigned to today
+            try (Cursor c4 = db.rawQuery(
+                    "SELECT id, title, color FROM todo_queue WHERE state='pending'" +
+                    " AND id NOT IN (SELECT queue_item_id FROM daily_tasks WHERE date=? AND source='queue_slot' AND queue_item_id IS NOT NULL)" +
+                    " ORDER BY position ASC LIMIT ?",
+                    new String[]{today, String.valueOf(unfilledSlotIds.size())})) {
+                int i = 0;
+                while (c4.moveToNext() && i < unfilledSlotIds.size()) {
+                    int qid   = c4.getInt(0);
+                    String t  = c4.getString(1);
+                    String co = c4.getString(2);
+                    insertDailyTask(db, today, ++maxPos, t, co, "queue_slot", qid, unfilledSlotIds.get(i++));
+                    Log.d(TAG, "Filled queue slot with: " + t);
+                }
+            }
+
+            db.setTransactionSuccessful();
+        } finally {
+            db.endTransaction();
         }
-        c1.close();
-        if (allSlots.isEmpty()) return;
-
-        // Find which recurring slot IDs are already filled for today
-        Set<Integer> filledSlotIds = new HashSet<>();
-        Cursor c2 = db.rawQuery(
-            "SELECT recurring_task_id FROM daily_tasks WHERE date=? AND source='queue_slot'",
-            new String[]{today});
-        while (c2.moveToNext()) filledSlotIds.add(c2.getInt(0));
-        c2.close();
-
-        // Collect unfilled slots in order
-        List<Integer> unfilledSlotIds = new ArrayList<>();
-        for (RecurringTask rt : allSlots) {
-            if (!filledSlotIds.contains(rt.id)) unfilledSlotIds.add(rt.id);
-        }
-        if (unfilledSlotIds.isEmpty()) return;
-
-        Cursor c3 = db.rawQuery(
-            "SELECT COALESCE(MAX(position), -1) FROM daily_tasks WHERE date=?",
-            new String[]{today});
-        int maxPos = -1;
-        if (c3.moveToFirst()) maxPos = c3.getInt(0);
-        c3.close();
-
-        // Get pending queue items not already assigned to today
-        Cursor c4 = db.rawQuery(
-            "SELECT id, title, color FROM todo_queue WHERE state='pending'" +
-            " AND id NOT IN (SELECT queue_item_id FROM daily_tasks WHERE date=? AND source='queue_slot' AND queue_item_id IS NOT NULL)" +
-            " ORDER BY position ASC LIMIT ?",
-            new String[]{today, String.valueOf(unfilledSlotIds.size())});
-        int i = 0;
-        while (c4.moveToNext() && i < unfilledSlotIds.size()) {
-            int qid  = c4.getInt(0);
-            String t = c4.getString(1);
-            String co = c4.getString(2);
-            insertDailyTask(db, today, ++maxPos, t, co, "queue_slot", qid, unfilledSlotIds.get(i++));
-            Log.d(TAG, "Filled queue slot with: " + t);
-        }
-        c4.close();
     }
 
     public List<DailyTask> getDailyTasks(String date) {
         SQLiteDatabase db = getReadableDatabase();
-        Cursor c = db.rawQuery(
-            "SELECT dt.id, dt.date, dt.position, dt.title, dt.color, dt.state, dt.source, dt.queue_item_id" +
-            " FROM daily_tasks dt LEFT JOIN recurring_tasks rt ON dt.recurring_task_id = rt.id" +
-            " WHERE dt.date=? ORDER BY COALESCE(rt.position, dt.position) ASC",
-            new String[]{date});
-        List<DailyTask> list = new ArrayList<>();
-        while (c.moveToNext()) {
-            DailyTask t = new DailyTask();
-            t.id = c.getInt(0);
-            t.date = c.getString(1);
-            t.position = c.getInt(2);
-            t.title = c.getString(3);
-            t.color = c.getString(4);
-            t.state = c.getString(5);
-            t.source = c.isNull(6) ? "recurring" : c.getString(6);
-            t.queueItemId = c.isNull(7) ? 0 : c.getInt(7);
-            list.add(t);
+        try (Cursor c = db.rawQuery(
+                "SELECT dt.id, dt.date, dt.position, dt.title, dt.color, dt.state, dt.source, dt.queue_item_id" +
+                " FROM daily_tasks dt LEFT JOIN recurring_tasks rt ON dt.recurring_task_id = rt.id" +
+                " WHERE dt.date=? ORDER BY COALESCE(rt.position, dt.position) ASC",
+                new String[]{date})) {
+            List<DailyTask> list = new ArrayList<>();
+            while (c.moveToNext()) {
+                DailyTask t = new DailyTask();
+                t.id = c.getInt(0);
+                t.date = c.getString(1);
+                t.position = c.getInt(2);
+                t.title = c.getString(3);
+                t.color = c.getString(4);
+                t.state = c.getString(5);
+                t.source = c.isNull(6) ? "recurring" : c.getString(6);
+                t.queueItemId = c.isNull(7) ? 0 : c.getInt(7);
+                list.add(t);
+            }
+            return list;
         }
-        c.close();
-        return list;
     }
 
     public void setDailyTaskState(int id, String state) {
@@ -393,13 +403,13 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         cv.put("state", state);
         db.update("daily_tasks", cv, "id=?", new String[]{String.valueOf(id)});
         if (DailyTask.STATE_COMPLETED.equals(state)) {
-            Cursor c = db.rawQuery(
-                "SELECT source, queue_item_id FROM daily_tasks WHERE id=?",
-                new String[]{String.valueOf(id)});
-            if (c.moveToFirst() && "queue_slot".equals(c.getString(0)) && !c.isNull(1)) {
-                markQueueItemDone(c.getInt(1));
+            try (Cursor c = db.rawQuery(
+                    "SELECT source, queue_item_id FROM daily_tasks WHERE id=?",
+                    new String[]{String.valueOf(id)})) {
+                if (c.moveToFirst() && "queue_slot".equals(c.getString(0)) && !c.isNull(1)) {
+                    markQueueItemDone(c.getInt(1));
+                }
             }
-            c.close();
         }
     }
 
@@ -476,14 +486,20 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         if (targetPos < 0) return;
 
         SQLiteDatabase db = getWritableDatabase();
-        // Shift all tasks at position > targetPos by 1 to make room
-        db.execSQL("UPDATE daily_tasks SET position = position + 1 WHERE date=? AND position > ?",
-            new Object[]{date, targetPos});
-        // Delete original
-        db.delete("daily_tasks", "id=?", new String[]{String.valueOf(taskId)});
-        // Insert two replacements
-        insertDailyTask(db, date, targetPos, title1, color1, "recurring", 0, 0);
-        insertDailyTask(db, date, targetPos + 1, title2, color2, "recurring", 0, 0);
+        db.beginTransaction();
+        try {
+            // Shift all tasks at position > targetPos by 1 to make room
+            db.execSQL("UPDATE daily_tasks SET position = position + 1 WHERE date=? AND position > ?",
+                new Object[]{date, targetPos});
+            // Delete original
+            db.delete("daily_tasks", "id=?", new String[]{String.valueOf(taskId)});
+            // Insert two replacements
+            insertDailyTask(db, date, targetPos, title1, color1, "recurring", 0, 0);
+            insertDailyTask(db, date, targetPos + 1, title2, color2, "recurring", 0, 0);
+            db.setTransactionSuccessful();
+        } finally {
+            db.endTransaction();
+        }
     }
 
     // ─── Debug ─────────────────────────────────────────────────────────────────
@@ -501,10 +517,10 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         String[] tables = {"recurring_tasks", "todo_queue", "daily_tasks", "action_log", "settings"};
         StringBuilder sb = new StringBuilder();
         for (String table : tables) {
-            Cursor c = db.rawQuery("SELECT COUNT(*) FROM " + table, null);
-            int count = c.moveToFirst() ? c.getInt(0) : 0;
-            c.close();
-            sb.append(table).append(": ").append(count).append("\n");
+            try (Cursor c = db.rawQuery("SELECT COUNT(*) FROM " + table, null)) {
+                int count = c.moveToFirst() ? c.getInt(0) : 0;
+                sb.append(table).append(": ").append(count).append("\n");
+            }
         }
         return sb.toString().trim();
     }
@@ -513,46 +529,46 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 
     public List<QueueTask> getQueueTasks() {
         SQLiteDatabase db = getReadableDatabase();
-        Cursor c = db.rawQuery(
-            "SELECT id, position, title, color FROM todo_queue WHERE state='pending' ORDER BY position ASC",
-            null);
-        List<QueueTask> list = new ArrayList<>();
-        while (c.moveToNext()) {
-            QueueTask t = new QueueTask();
-            t.id = c.getInt(0);
-            t.position = c.getInt(1);
-            t.title = c.getString(2);
-            t.color = c.getString(3);
-            list.add(t);
+        try (Cursor c = db.rawQuery(
+                "SELECT id, position, title, color FROM todo_queue WHERE state='pending' ORDER BY position ASC",
+                null)) {
+            List<QueueTask> list = new ArrayList<>();
+            while (c.moveToNext()) {
+                QueueTask t = new QueueTask();
+                t.id = c.getInt(0);
+                t.position = c.getInt(1);
+                t.title = c.getString(2);
+                t.color = c.getString(3);
+                list.add(t);
+            }
+            return list;
         }
-        c.close();
-        return list;
     }
 
     public List<QueueTask> getDoneQueueTasks() {
         SQLiteDatabase db = getReadableDatabase();
-        Cursor c = db.rawQuery(
-            "SELECT id, position, title, color FROM todo_queue WHERE state='done' ORDER BY position ASC",
-            null);
-        List<QueueTask> list = new ArrayList<>();
-        while (c.moveToNext()) {
-            QueueTask t = new QueueTask();
-            t.id = c.getInt(0);
-            t.position = c.getInt(1);
-            t.title = c.getString(2);
-            t.color = c.getString(3);
-            list.add(t);
+        try (Cursor c = db.rawQuery(
+                "SELECT id, position, title, color FROM todo_queue WHERE state='done' ORDER BY position ASC",
+                null)) {
+            List<QueueTask> list = new ArrayList<>();
+            while (c.moveToNext()) {
+                QueueTask t = new QueueTask();
+                t.id = c.getInt(0);
+                t.position = c.getInt(1);
+                t.title = c.getString(2);
+                t.color = c.getString(3);
+                list.add(t);
+            }
+            return list;
         }
-        c.close();
-        return list;
     }
 
     public void addToQueue(String title, String color) {
         SQLiteDatabase db = getWritableDatabase();
-        Cursor c = db.rawQuery("SELECT COALESCE(MAX(position), -1) FROM todo_queue", null);
-        int maxPos = -1;
-        if (c.moveToFirst()) maxPos = c.getInt(0);
-        c.close();
+        int maxPos;
+        try (Cursor c = db.rawQuery("SELECT COALESCE(MAX(position), -1) FROM todo_queue", null)) {
+            maxPos = c.moveToFirst() ? c.getInt(0) : -1;
+        }
         ContentValues cv = new ContentValues();
         cv.put("position", maxPos + 1);
         cv.put("title", title);
@@ -573,21 +589,28 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         if (targetPos < 0) return;
 
         SQLiteDatabase db = getWritableDatabase();
-        db.execSQL("UPDATE todo_queue SET position = position + 1 WHERE position > ?",
-            new Object[]{targetPos});
-        db.delete("todo_queue", "id=?", new String[]{String.valueOf(taskId)});
+        db.beginTransaction();
+        try {
+            db.execSQL("UPDATE todo_queue SET position = position + 1 WHERE position > ?",
+                new Object[]{targetPos});
+            db.delete("todo_queue", "id=?", new String[]{String.valueOf(taskId)});
 
-        ContentValues cv1 = new ContentValues();
-        cv1.put("position", targetPos);
-        cv1.put("title", title1);
-        cv1.put("color", color1);
-        db.insert("todo_queue", null, cv1);
+            ContentValues cv1 = new ContentValues();
+            cv1.put("position", targetPos);
+            cv1.put("title", title1);
+            cv1.put("color", color1);
+            db.insert("todo_queue", null, cv1);
 
-        ContentValues cv2 = new ContentValues();
-        cv2.put("position", targetPos + 1);
-        cv2.put("title", title2);
-        cv2.put("color", color2);
-        db.insert("todo_queue", null, cv2);
+            ContentValues cv2 = new ContentValues();
+            cv2.put("position", targetPos + 1);
+            cv2.put("title", title2);
+            cv2.put("color", color2);
+            db.insert("todo_queue", null, cv2);
+
+            db.setTransactionSuccessful();
+        } finally {
+            db.endTransaction();
+        }
     }
 
     public void moveQueueTaskUp(int id) {
@@ -625,30 +648,30 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 
     public List<RecurringTask> getRecurringTasks() {
         SQLiteDatabase db = getReadableDatabase();
-        Cursor c = db.rawQuery(
-            "SELECT id, position, title, color, type, rule_data FROM recurring_tasks ORDER BY position ASC",
-            null);
-        List<RecurringTask> list = new ArrayList<>();
-        while (c.moveToNext()) {
-            RecurringTask t = new RecurringTask();
-            t.id = c.getInt(0);
-            t.position = c.getInt(1);
-            t.title = c.getString(2);
-            t.color = c.getString(3);
-            t.type = c.getString(4);
-            t.ruleData = c.getString(5);
-            list.add(t);
+        try (Cursor c = db.rawQuery(
+                "SELECT id, position, title, color, type, rule_data FROM recurring_tasks ORDER BY position ASC",
+                null)) {
+            List<RecurringTask> list = new ArrayList<>();
+            while (c.moveToNext()) {
+                RecurringTask t = new RecurringTask();
+                t.id = c.getInt(0);
+                t.position = c.getInt(1);
+                t.title = c.getString(2);
+                t.color = c.getString(3);
+                t.type = c.getString(4);
+                t.ruleData = c.getString(5);
+                list.add(t);
+            }
+            return list;
         }
-        c.close();
-        return list;
     }
 
     public void addRecurringTask(String title, String color, String type, String ruleData) {
         SQLiteDatabase db = getWritableDatabase();
-        Cursor c = db.rawQuery("SELECT COALESCE(MAX(position), -1) FROM recurring_tasks", null);
-        int maxPos = -1;
-        if (c.moveToFirst()) maxPos = c.getInt(0);
-        c.close();
+        int maxPos;
+        try (Cursor c = db.rawQuery("SELECT COALESCE(MAX(position), -1) FROM recurring_tasks", null)) {
+            maxPos = c.moveToFirst() ? c.getInt(0) : -1;
+        }
         ContentValues cv = new ContentValues();
         cv.put("position", maxPos + 1);
         cv.put("title", title);
