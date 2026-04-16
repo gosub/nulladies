@@ -6,8 +6,8 @@ import android.os.Bundle;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.BaseAdapter;
-import android.widget.Button;
 import android.widget.EditText;
+import android.widget.ImageButton;
 import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.TextView;
@@ -69,11 +69,11 @@ public class TodoQueueActivity extends AppCompatActivity {
 
             TextView title = convertView.findViewById(R.id.task_title);
             View colorDot  = convertView.findViewById(R.id.color_dot);
-            Button btnUp   = convertView.findViewById(R.id.btn_up);
-            Button btnDown = convertView.findViewById(R.id.btn_down);
-            Button btnSplit  = convertView.findViewById(R.id.btn_split);
-            Button btnDone   = convertView.findViewById(R.id.btn_done);
-            Button btnDelete = convertView.findViewById(R.id.btn_delete);
+            ImageButton btnUp     = convertView.findViewById(R.id.btn_up);
+            ImageButton btnDown   = convertView.findViewById(R.id.btn_down);
+            ImageButton btnSplit  = convertView.findViewById(R.id.btn_split);
+            ImageButton btnDone   = convertView.findViewById(R.id.btn_done);
+            ImageButton btnDelete = convertView.findViewById(R.id.btn_delete);
 
             title.setText(task.title);
             UiUtil.applyCircleColor(colorDot, TaskColor.fromName(task.color).toArgb());

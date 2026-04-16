@@ -9,8 +9,8 @@ import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.BaseAdapter;
-import android.widget.Button;
 import android.widget.CheckBox;
+import android.widget.ImageButton;
 import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.ListView;
@@ -83,10 +83,10 @@ public class RecurringTasksActivity extends AppCompatActivity {
             TextView title  = convertView.findViewById(R.id.task_title);
             TextView type   = convertView.findViewById(R.id.task_type);
             View colorDot   = convertView.findViewById(R.id.color_dot);
-            Button btnUp    = convertView.findViewById(R.id.btn_up);
-            Button btnDown  = convertView.findViewById(R.id.btn_down);
-            Button btnEdit  = convertView.findViewById(R.id.btn_edit);
-            Button btnDelete = convertView.findViewById(R.id.btn_delete);
+            ImageButton btnUp     = convertView.findViewById(R.id.btn_up);
+            ImageButton btnDown   = convertView.findViewById(R.id.btn_down);
+            ImageButton btnEdit   = convertView.findViewById(R.id.btn_edit);
+            ImageButton btnDelete = convertView.findViewById(R.id.btn_delete);
 
             boolean isSlot = RecurringTask.TYPE_QUEUE_SLOT.equals(task.type);
             title.setText(isSlot ? "[Queue Slot]" : task.title);
