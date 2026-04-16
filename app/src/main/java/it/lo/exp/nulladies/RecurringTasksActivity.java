@@ -93,7 +93,7 @@ public class RecurringTasksActivity extends AppCompatActivity {
             type.setText(task.describeType());
             colorDot.setVisibility(isSlot ? View.INVISIBLE : View.VISIBLE);
             if (!isSlot && task.color != null) {
-                applyCircleColor(colorDot, TaskColor.fromName(task.color).toArgb());
+                UiUtil.applyCircleColor(colorDot, TaskColor.fromName(task.color).toArgb());
             }
 
             btnUp.setEnabled(position > 0);
@@ -159,7 +159,7 @@ public class RecurringTasksActivity extends AppCompatActivity {
         TaskColor initColor = (existing != null && existing.color != null)
             ? TaskColor.fromName(existing.color) : TaskColor.BLUE;
         final TaskColor[] selected = {initColor};
-        MainActivity.buildColorPicker(colorPicker, selected, initColor);
+        UiUtil.buildColorPicker(colorPicker, selected, initColor);
 
         // Spinner selection listener
         spinnerType.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
@@ -240,10 +240,4 @@ public class RecurringTasksActivity extends AppCompatActivity {
             .show();
     }
 
-    private static void applyCircleColor(View v, int color) {
-        android.graphics.drawable.GradientDrawable d = new android.graphics.drawable.GradientDrawable();
-        d.setShape(android.graphics.drawable.GradientDrawable.OVAL);
-        d.setColor(color);
-        v.setBackground(d);
-    }
 }

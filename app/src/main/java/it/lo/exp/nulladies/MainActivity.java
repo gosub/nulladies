@@ -327,8 +327,8 @@ public class MainActivity extends AppCompatActivity {
         final TaskColor[] sel1 = {initColor};
         final TaskColor[] sel2 = {initColor};
 
-        buildColorPicker(colorPicker1, sel1, initColor);
-        buildColorPicker(colorPicker2, sel2, initColor);
+        UiUtil.buildColorPicker(colorPicker1, sel1, initColor);
+        UiUtil.buildColorPicker(colorPicker2, sel2, initColor);
 
         new AlertDialog.Builder(this)
             .setTitle("Split Task")
@@ -339,7 +339,7 @@ public class MainActivity extends AppCompatActivity {
                 if (t1.isEmpty() || t2.isEmpty()) return;
                 db.splitDailyTask(task.id, today(), t1, sel1[0].name(), t2, sel2[0].name());
                 db.logAction("SPLIT", task.title, t1 + "|" + t2);
-                exportOrg();
+                UiUtil.exportOrg(this, db);
                 selectedTaskId = -1;
                 refreshData();
                 refreshUI();
@@ -354,7 +354,7 @@ public class MainActivity extends AppCompatActivity {
         LinearLayout colorPicker = view.findViewById(R.id.color_picker);
 
         final TaskColor[] selected = {TaskColor.BLUE};
-        buildColorPicker(colorPicker, selected, TaskColor.BLUE);
+        UiUtil.buildColorPicker(colorPicker, selected, TaskColor.BLUE);
 
         new AlertDialog.Builder(this)
             .setTitle("Add to Queue")
@@ -370,51 +370,10 @@ public class MainActivity extends AppCompatActivity {
             .show();
     }
 
-    // ─── Color Picker Helper ───────────────────────────────────────────────────
-
-    static void buildColorPicker(LinearLayout container, TaskColor[] selectedHolder,
-                                  TaskColor initial) {
-        container.removeAllViews();
-        float density = container.getContext().getResources().getDisplayMetrics().density;
-        int sizePx   = (int)(36 * density);
-        int marginPx = (int)(3 * density);
-
-        TaskColor[] colors = TaskColor.values();
-        View[] views = new View[colors.length];
-
-        for (int i = 0; i < colors.length; i++) {
-            final int idx = i;
-            final TaskColor color = colors[i];
-            View v = new View(container.getContext());
-            LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(sizePx, sizePx);
-            lp.setMargins(marginPx, marginPx, marginPx, marginPx);
-            v.setLayoutParams(lp);
-            views[i] = v;
-            applyColorSwatch(v, color, color == initial, density);
-            v.setOnClickListener(click -> {
-                selectedHolder[0] = color;
-                for (int j = 0; j < colors.length; j++) {
-                    applyColorSwatch(views[j], colors[j], j == idx, density);
-                }
-            });
-            container.addView(v);
-        }
-    }
-
-    private static void applyColorSwatch(View v, TaskColor color, boolean selected, float density) {
-        GradientDrawable d = new GradientDrawable();
-        d.setShape(GradientDrawable.RECTANGLE);
-        d.setColor(color.toArgb());
-        if (selected) {
-            d.setStroke((int)(3 * density), 0xFF000000);
-        }
-        v.setBackground(d);
-    }
-
     // ─── Helpers ───────────────────────────────────────────────────────────────
 
     private void exportOrg() {
-        new OrgExporter(this, db).exportAsync();
+        UiUtil.exportOrg(this, db);
     }
 
     private static String today() {

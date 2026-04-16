@@ -76,7 +76,7 @@ public class TodoQueueActivity extends AppCompatActivity {
             Button btnDelete = convertView.findViewById(R.id.btn_delete);
 
             title.setText(task.title);
-            applyCircleColor(colorDot, TaskColor.fromName(task.color).toArgb());
+            UiUtil.applyCircleColor(colorDot, TaskColor.fromName(task.color).toArgb());
 
             btnUp.setEnabled(position > 0);
             btnDown.setEnabled(position < tasks.size() - 1);
@@ -120,7 +120,7 @@ public class TodoQueueActivity extends AppCompatActivity {
         LinearLayout colorPicker = view.findViewById(R.id.color_picker);
 
         final TaskColor[] selected = {TaskColor.BLUE};
-        MainActivity.buildColorPicker(colorPicker, selected, TaskColor.BLUE);
+        UiUtil.buildColorPicker(colorPicker, selected, TaskColor.BLUE);
 
         new AlertDialog.Builder(this)
             .setTitle("Add to Queue")
@@ -150,8 +150,8 @@ public class TodoQueueActivity extends AppCompatActivity {
         final TaskColor[] sel1 = {initColor};
         final TaskColor[] sel2 = {initColor};
 
-        MainActivity.buildColorPicker(colorPicker1, sel1, initColor);
-        MainActivity.buildColorPicker(colorPicker2, sel2, initColor);
+        UiUtil.buildColorPicker(colorPicker1, sel1, initColor);
+        UiUtil.buildColorPicker(colorPicker2, sel2, initColor);
 
         new AlertDialog.Builder(this)
             .setTitle("Split Task")
@@ -192,13 +192,6 @@ public class TodoQueueActivity extends AppCompatActivity {
     // ─── Helpers ───────────────────────────────────────────────────────────────
 
     private void exportOrg() {
-        new OrgExporter(this, db).exportAsync();
-    }
-
-    private static void applyCircleColor(View v, int color) {
-        android.graphics.drawable.GradientDrawable d = new android.graphics.drawable.GradientDrawable();
-        d.setShape(android.graphics.drawable.GradientDrawable.OVAL);
-        d.setColor(color);
-        v.setBackground(d);
+        UiUtil.exportOrg(this, db);
     }
 }
