@@ -33,6 +33,7 @@ public class MainActivity extends AppCompatActivity {
     private TextView currentTaskTitle;
     private ImageButton btnSplit, btnDone, btnSkip;
     private TextView allDoneText;
+    private TextView progressText;
     private LinearLayout taskGrid;
 
     // State
@@ -58,6 +59,7 @@ public class MainActivity extends AppCompatActivity {
         btnDone             = findViewById(R.id.btn_done);
         btnSkip             = findViewById(R.id.btn_skip);
         allDoneText         = findViewById(R.id.all_done_text);
+        progressText        = findViewById(R.id.progress_text);
         taskGrid            = findViewById(R.id.task_grid);
 
         // Action buttons
@@ -147,6 +149,15 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void buildCurrentTaskCard() {
+        // Progress counter
+        if (!allTasks.isEmpty()) {
+            int done = completedTasks.size() + skippedTasks.size();
+            progressText.setText(done + "/" + allTasks.size());
+            progressText.setVisibility(View.VISIBLE);
+        } else {
+            progressText.setVisibility(View.GONE);
+        }
+
         DailyTask sel = findSelectedTask();
         if (sel == null) {
             currentTaskSection.setVisibility(View.GONE);

@@ -79,6 +79,19 @@
 
                 </LinearLayout>
 
+                <!-- Progress counter -->
+                <TextView
+                    android:id="@+id/progress_text"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:textSize="12sp"
+                    android:textColor="@color/text_secondary"
+                    android:gravity="end"
+                    android:paddingEnd="12dp"
+                    android:paddingTop="4dp"
+                    android:paddingBottom="2dp"
+                    android:visibility="gone" />
+
                 <!-- All done message -->
                 <TextView
                     android:id="@+id/all_done_text"
