@@ -4,7 +4,7 @@
 
 A micro-task tracker for Android. The idea is simple: completing many small things through the day builds positive momentum. Each completed task becomes a colored square on the day's grid — a visible record that you did something.
 
-This is a personal experiment, not intended for publication or use by anyone other than me. Development is suspended for now, but I may add or change things from time to time when I want to try something new.
+> This is a personal experiment, not intended for publication or use by anyone other than me. Development is suspended for now, but I may add or change things from time to time when I want to try something new.
 
 ## Features
 
