@@ -17,6 +17,7 @@ import java.time.format.DateTimeFormatter;
 public class SettingsActivity extends AppCompatActivity {
 
     private static final int REQUEST_BACKUP_FOLDER = 1;
+    private static final int REQUEST_IMPORT_JSON   = 2;
 
     private DatabaseHelper db;
     private TextView rolloverTimeDisplay;
@@ -37,6 +38,8 @@ public class SettingsActivity extends AppCompatActivity {
 
         findViewById(R.id.btn_pick_time).setOnClickListener(v -> showTimePicker());
         findViewById(R.id.btn_pick_folder).setOnClickListener(v -> pickFolder());
+        findViewById(R.id.btn_json_export).setOnClickListener(v -> exportJson());
+        findViewById(R.id.btn_json_import).setOnClickListener(v -> pickImportFile());
 
         if (BuildConfig.DEBUG) {
             findViewById(R.id.debug_section).setVisibility(View.VISIBLE);
@@ -54,9 +57,8 @@ public class SettingsActivity extends AppCompatActivity {
 
         String folderUri = db.getSetting("backup_folder_uri", "");
         if (folderUri.isEmpty()) {
-            backupFolderDisplay.setText("Not set");
+            backupFolderDisplay.setText(getString(R.string.settings_backup_not_set));
         } else {
-            // Display a friendly version of the URI
             try {
                 Uri uri = Uri.parse(folderUri);
                 String path = uri.getLastPathSegment();
@@ -87,6 +89,36 @@ public class SettingsActivity extends AppCompatActivity {
         Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT_TREE);
         startActivityForResult(intent, REQUEST_BACKUP_FOLDER);
     }
+
+    // ─── JSON Backup ───────────────────────────────────────────────────────────
+
+    private void exportJson() {
+        JsonBackup.exportAsync(this, db,
+            () -> toast(R.string.toast_json_export_ok),
+            () -> toast(R.string.toast_json_export_fail));
+    }
+
+    private void pickImportFile() {
+        Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
+        intent.addCategory(Intent.CATEGORY_OPENABLE);
+        intent.setType("*/*");
+        startActivityForResult(intent, REQUEST_IMPORT_JSON);
+    }
+
+    private void confirmAndImport(Uri fileUri) {
+        new AlertDialog.Builder(this)
+            .setTitle(R.string.dialog_import_confirm_title)
+            .setMessage(R.string.dialog_import_confirm_msg)
+            .setPositiveButton(R.string.dialog_import_confirm_ok, (d, w) -> {
+                JsonBackup.importAsync(this, db, fileUri,
+                    () -> toast(R.string.toast_json_import_ok),
+                    () -> toast(R.string.toast_json_import_fail));
+            })
+            .setNegativeButton(android.R.string.cancel, null)
+            .show();
+    }
+
+    // ─── Debug ─────────────────────────────────────────────────────────────────
 
     private void resetToday() {
         String today = LocalDate.now().format(DateTimeFormatter.ISO_LOCAL_DATE);
@@ -122,16 +154,28 @@ public class SettingsActivity extends AppCompatActivity {
             .show();
     }
 
+    // ─── Helpers ───────────────────────────────────────────────────────────────
+
+    private void toast(int resId) {
+        Toast.makeText(this, resId, Toast.LENGTH_LONG).show();
+    }
+
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        if (requestCode == REQUEST_BACKUP_FOLDER && resultCode == RESULT_OK && data != null) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (resultCode != RESULT_OK || data == null) return;
+
+        if (requestCode == REQUEST_BACKUP_FOLDER) {
             Uri treeUri = data.getData();
             if (treeUri == null) return;
-            // Persist permission across reboots
             getContentResolver().takePersistableUriPermission(treeUri,
                 Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_GRANT_WRITE_URI_PERMISSION);
             db.saveSetting("backup_folder_uri", treeUri.toString());
             loadSettings();
+        } else if (requestCode == REQUEST_IMPORT_JSON) {
+            Uri fileUri = data.getData();
+            if (fileUri == null) return;
+            confirmAndImport(fileUri);
         }
     }
 }

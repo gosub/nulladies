@@ -6,6 +6,9 @@ import android.net.Uri;
 import android.provider.DocumentsContract;
 import android.util.Log;
 
+import android.os.Handler;
+import android.os.Looper;
+
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.nio.charset.StandardCharsets;
@@ -27,29 +30,36 @@ public class OrgExporter {
     }
 
     public void exportAsync() {
-        new Thread(this::export).start();
+        exportAsync(null);
     }
 
-    private void export() {
-        String treeUriStr = db.getSetting("backup_folder_uri", "");
-        if (treeUriStr.isEmpty()) return;
+    public void exportAsync(Runnable onFailure) {
+        new Thread(() -> {
+            String treeUriStr = db.getSetting("backup_folder_uri", "");
+            if (treeUriStr.isEmpty()) return;
 
-        try {
-            Uri treeUri = Uri.parse(treeUriStr);
-            String content = buildOrgContent();
-            Uri fileUri = getOrCreateFile(treeUri);
-            if (fileUri == null) return;
+            try {
+                Uri treeUri = Uri.parse(treeUriStr);
+                String content = buildOrgContent();
+                Uri fileUri = getOrCreateFile(treeUri);
+                if (fileUri == null) { post(onFailure); return; }
 
-            ContentResolver cr = context.getContentResolver();
-            try (OutputStream os = cr.openOutputStream(fileUri, "wt");
-                 OutputStreamWriter writer = new OutputStreamWriter(os, StandardCharsets.UTF_8)) {
-                writer.write(content);
-                writer.flush();
+                ContentResolver cr = context.getContentResolver();
+                try (OutputStream os = cr.openOutputStream(fileUri, "wt");
+                     OutputStreamWriter writer = new OutputStreamWriter(os, StandardCharsets.UTF_8)) {
+                    writer.write(content);
+                    writer.flush();
+                }
+                Log.d(TAG, "Org export written to " + fileUri);
+            } catch (Exception e) {
+                Log.e(TAG, "Org export failed: " + e.getMessage());
+                post(onFailure);
             }
-            Log.d(TAG, "Org export written to " + fileUri);
-        } catch (Exception e) {
-            Log.e(TAG, "Org export failed: " + e.getMessage());
-        }
+        }).start();
+    }
+
+    private static void post(Runnable r) {
+        if (r != null) new Handler(Looper.getMainLooper()).post(r);
     }
 
     private Uri getOrCreateFile(Uri treeUri) {

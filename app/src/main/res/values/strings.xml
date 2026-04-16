@@ -63,6 +63,20 @@
     <string name="day_sat">Sa</string>
     <string name="day_sun">Su</string>
 
+    <!-- JSON backup section -->
+    <string name="settings_json_label">JSON Backup</string>
+    <string name="settings_json_desc">Export or import recurring tasks, queue, and settings as JSON.</string>
+    <string name="settings_json_export">Export JSON</string>
+    <string name="settings_json_import">Import JSON</string>
+    <string name="toast_json_export_ok">JSON backup exported.</string>
+    <string name="toast_json_export_fail">Export failed. Is a backup folder set?</string>
+    <string name="toast_json_import_ok">Import successful. Restart the app to apply changes.</string>
+    <string name="toast_json_import_fail">Import failed. Is the file a valid NullaDies backup?</string>
+    <string name="toast_org_export_fail">Org export failed.</string>
+    <string name="dialog_import_confirm_title">Replace data?</string>
+    <string name="dialog_import_confirm_msg">This will replace all recurring tasks and pending queue items with the contents of the backup file.</string>
+    <string name="dialog_import_confirm_ok">Import</string>
+
     <!-- Bottom navigation -->
     <string name="nav_queue">Queue</string>
     <string name="nav_tasks">Tasks</string>

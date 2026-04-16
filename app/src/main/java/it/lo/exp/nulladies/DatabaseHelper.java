@@ -7,6 +7,9 @@ import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 import android.util.Log;
 
+import org.json.JSONArray;
+import org.json.JSONObject;
+
 import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
@@ -496,6 +499,54 @@ public class DatabaseHelper extends SQLiteOpenHelper {
             // Insert two replacements
             insertDailyTask(db, date, targetPos, title1, color1, "recurring", 0, 0);
             insertDailyTask(db, date, targetPos + 1, title2, color2, "recurring", 0, 0);
+            db.setTransactionSuccessful();
+        } finally {
+            db.endTransaction();
+        }
+    }
+
+    // ─── Backup / Restore ──────────────────────────────────────────────────────
+
+    /** Replace recurring_tasks and pending todo_queue with data from a JSON backup. */
+    public void restoreFromBackup(JSONObject root) throws Exception {
+        SQLiteDatabase db = getWritableDatabase();
+        db.beginTransaction();
+        try {
+            db.delete("recurring_tasks", null, null);
+            db.delete("todo_queue", "state=?", new String[]{QueueTask.STATE_PENDING});
+
+            JSONArray recurring = root.optJSONArray("recurring_tasks");
+            if (recurring != null) {
+                for (int i = 0; i < recurring.length(); i++) {
+                    JSONObject o = recurring.getJSONObject(i);
+                    ContentValues cv = new ContentValues();
+                    cv.put("position", o.getInt("position"));
+                    cv.put("title", o.isNull("title") ? null : o.getString("title"));
+                    cv.put("color", o.isNull("color") ? null : o.getString("color"));
+                    cv.put("type", o.getString("type"));
+                    cv.put("rule_data", o.isNull("rule_data") ? null : o.getString("rule_data"));
+                    db.insert("recurring_tasks", null, cv);
+                }
+            }
+
+            JSONArray queue = root.optJSONArray("todo_queue");
+            if (queue != null) {
+                for (int i = 0; i < queue.length(); i++) {
+                    JSONObject o = queue.getJSONObject(i);
+                    ContentValues cv = new ContentValues();
+                    cv.put("position", o.getInt("position"));
+                    cv.put("title", o.getString("title"));
+                    cv.put("color", o.getString("color"));
+                    cv.put("state", QueueTask.STATE_PENDING);
+                    db.insert("todo_queue", null, cv);
+                }
+            }
+
+            JSONObject settings = root.optJSONObject("settings");
+            if (settings != null && settings.has("rollover_time")) {
+                saveSetting("rollover_time", settings.getString("rollover_time"));
+            }
+
             db.setTransactionSuccessful();
         } finally {
             db.endTransaction();
